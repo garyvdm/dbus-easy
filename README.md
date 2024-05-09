@@ -1,4 +1,11 @@
-# python-dbus-next
+# dbus-easy
+
+This is a fork of dbus-next. I plan to try improve the easy of use of the library, but for flexibility sake, I don't plan on staying compatible with dbus-next.
+
+I am in early phases of this work.
+
+
+# Original python-dbus-next README:
 
 The next great DBus library for Python.
 

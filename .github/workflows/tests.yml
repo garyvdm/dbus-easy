@@ -1,0 +1,54 @@
+name: Tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.8
+            3.9
+            3.10
+            3.11
+            3.12
+            pypy3.9
+            pypy3.10
+
+      - name: Install gi
+        run: |
+          sudo dd of=/etc/dpkg/dpkg.cfg.d/docker-apt-speedup <<< force-unsafe-io
+          sudo apt install libgirepository1.0-dev gir1.2-glib-2.0
+
+      - id: cache-pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}
+          save-always: true
+
+      - name: Install tox
+        run: python3.12 -m pip install tox
+      - uses: actions/checkout@v4
+
+      - name: Run test suite
+        continue-on-error: true
+        run: tox
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+              test-results/**/junit*.xml
+
+      - name: Archive Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Test Results
+          path: test-results/**/*

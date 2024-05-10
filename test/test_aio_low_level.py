@@ -1,3 +1,4 @@
+from asyncio import get_event_loop
 from dbus_next.aio import MessageBus
 from dbus_next import Message, MessageType, MessageFlag
 
@@ -101,7 +102,7 @@ async def test_sending_messages_between_buses():
 
 
 @pytest.mark.asyncio
-async def test_sending_signals_between_buses(event_loop):
+async def test_sending_signals_between_buses():
     bus1 = await MessageBus().connect()
     bus2 = await MessageBus().connect()
 
@@ -115,7 +116,7 @@ async def test_sending_signals_between_buses(event_loop):
     await bus1.call(add_match_msg)
 
     async def wait_for_message():
-        future = event_loop.create_future()
+        future = get_event_loop().create_future()
 
         def message_handler(signal):
             if signal.sender == bus2.unique_name:

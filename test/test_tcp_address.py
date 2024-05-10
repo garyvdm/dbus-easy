@@ -8,7 +8,7 @@ import os
 
 
 @pytest.mark.asyncio
-async def test_tcp_connection_with_forwarding(event_loop):
+async def test_tcp_connection_with_forwarding():
     closables = []
     host = '127.0.0.1'
     port = '55556'
@@ -37,8 +37,8 @@ async def test_tcp_connection_with_forwarding(event_loop):
                     break
                 tcp_writer.write(data)
 
-        asyncio.run_coroutine_threadsafe(handle_read(), event_loop)
-        asyncio.run_coroutine_threadsafe(handle_write(), event_loop)
+        asyncio.run_coroutine_threadsafe(handle_read(), asyncio.get_event_loop())
+        asyncio.run_coroutine_threadsafe(handle_write(), asyncio.get_event_loop())
 
     server = await asyncio.start_server(handle_connection, host, port)
     closables.append(server)

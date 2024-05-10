@@ -1,3 +1,4 @@
+from asyncio import get_event_loop
 from dbus_next.aio import MessageBus
 from dbus_next import Message
 
@@ -7,7 +8,7 @@ import functools
 
 
 @pytest.mark.asyncio
-async def test_bus_disconnect_before_reply(event_loop):
+async def test_bus_disconnect_before_reply():
     '''In this test, the bus disconnects before the reply comes in. Make sure
     the caller receives a reply with the error instead of hanging.'''
     bus = MessageBus()
@@ -21,7 +22,7 @@ async def test_bus_disconnect_before_reply(event_loop):
                 interface='org.freedesktop.DBus',
                 member='Ping'))
 
-    event_loop.call_soon(bus.disconnect)
+    get_event_loop().call_soon(bus.disconnect)
 
     with pytest.raises((EOFError, BrokenPipeError)):
         await ping
@@ -32,7 +33,7 @@ async def test_bus_disconnect_before_reply(event_loop):
 
 
 @pytest.mark.asyncio
-async def test_unexpected_disconnect(event_loop):
+async def test_unexpected_disconnect():
     bus = MessageBus()
     assert not bus.connected
     await bus.connect()
@@ -44,7 +45,7 @@ async def test_unexpected_disconnect(event_loop):
                 interface='org.freedesktop.DBus',
                 member='Ping'))
 
-    event_loop.call_soon(functools.partial(os.close, bus._fd))
+    get_event_loop().call_soon(functools.partial(os.close, bus._fd))
 
     with pytest.raises(OSError):
         await ping

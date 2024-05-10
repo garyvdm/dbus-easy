@@ -1,0 +1,50 @@
+[project]
+name = "dbus-ezy"
+dynamic = ["version"]
+description = 'A zero-dependency DBus library for Python with asyncio support'
+readme = "README.md"
+# TODO: Can't we populate this from git log?
+authors = [
+    { name = "Tony Crisci", email = "tony@dubstepdish.com" },
+    { name = "Gary van der Merwe", email = "garyvdm@gmail.com" },
+]
+maintainers = [{ name = "Gary van der Merwe", email = "garyvdm@gmail.com" }]
+license = { text = "MIT License" }
+requires-python = ">= 3.8"
+classifiers = [
+    # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+    'Development Status :: 3 - Alpha',
+    'Environment :: X11 Applications',
+    'Environment :: X11 Applications :: Gnome',
+    'Topic :: Desktop Environment :: Gnome',
+    'Topic :: Software Development :: Embedded Systems',
+    'Framework :: AsyncIO',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Typing :: Typed',
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/garyvdm/dbus-ezy"
+
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["dbus-ezy"]
+
+[tool.setuptools_scm]
+
+
+[tool.pytest.ini_options]
+timeout = 5

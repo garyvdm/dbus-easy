@@ -1,3 +1,7 @@
+# This library has no required dependencies. These dependencies are only for
+# running the test suite and documentation generator.
+
+build
 pytest
 pytest-asyncio
 pytest-timeout

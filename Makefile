@@ -28,7 +28,7 @@ clean:
 	rm -rf `find -type d -name __pycache__`
 
 publish:
-	python3 setup.py sdist bdist_wheel
+	python3 python3 -m build
 	python3 -m twine upload --repository-url https://upload.pypi.org/legacy/ dist/*
 
 docs:

@@ -6,6 +6,7 @@ pytest
 pytest-asyncio
 pytest-timeout
 pytest-cov
+pygobject
 ruff
 sphinx
 sphinx-autobuild

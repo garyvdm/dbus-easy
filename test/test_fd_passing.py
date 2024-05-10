@@ -1,9 +1,9 @@
 """This tests the ability to send and receive file descriptors in dbus messages"""
 from asyncio import get_event_loop
-from dbus_next.service import ServiceInterface, method, signal, dbus_property
-from dbus_next.signature import SignatureTree, Variant
-from dbus_next.aio import MessageBus
-from dbus_next import Message, MessageType
+from dbus_ezy.service import ServiceInterface, method, signal, dbus_property
+from dbus_ezy.signature import SignatureTree, Variant
+from dbus_ezy.aio import MessageBus
+from dbus_ezy import Message, MessageType
 import os
 
 import pytest

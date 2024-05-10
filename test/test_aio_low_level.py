@@ -1,6 +1,6 @@
 from asyncio import get_event_loop
-from dbus_next.aio import MessageBus
-from dbus_next import Message, MessageType, MessageFlag
+from dbus_ezy.aio import MessageBus
+from dbus_ezy import Message, MessageType, MessageFlag
 
 import pytest
 

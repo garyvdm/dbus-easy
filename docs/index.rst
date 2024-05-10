@@ -1,7 +1,7 @@
-Python DBus-Next Documentation
+Python dbus-ezy Documentation
 ==============================
 
-.. module:: dbus_next
+.. module:: dbus_ezy
 
 .. toctree::
    :maxdepth: 3
@@ -21,7 +21,7 @@ Python DBus-Next Documentation
 Overview
 ++++++++
 
-Python DBus-Next is a library for the `DBus message bus system <https://www.freedesktop.org/wiki/Software/dbus/>`_ for interprocess communcation in a Linux desktop or mobile environment.
+Python dbus-ezy is a library for the `DBus message bus system <https://www.freedesktop.org/wiki/Software/dbus/>`_ for interprocess communcation in a Linux desktop or mobile environment.
 
 Desktop application developers can use this library for integrating their applications into desktop environments by implementing common DBus standard interfaces or creating custom plugin interfaces.
 
@@ -46,21 +46,21 @@ The library offers three core interfaces:
 Installation
 ++++++++++++
 
-This library is available on PyPi as `dbus-next <https://pypi.org/project/dbus-next/>`_.
+This library is available on PyPi as `dbus-ezy <https://pypi.org/project/dbus-ezy/>`_.
 
 .. code-block:: bash
 
-    pip3 install dbus-next
+    pip3 install dbus-ezy
 
 Contributing
 ++++++++++++
 
-Development for this library happens on `Github <https://github.com/altdesktop/python-dbus-next>`_. Report bugs or request features there. Contributions are welcome.
+Development for this library happens on `Github <https://github.com/altdesktop/python-dbus-ezy>`_. Report bugs or request features there. Contributions are welcome.
 
 License
 ++++++++
 
-This library is available under an `MIT License <https://github.com/altdesktop/python-dbus-next/blob/master/LICENSE>`_.
+This library is available under an `MIT License <https://github.com/altdesktop/python-dbus-ezy/blob/master/LICENSE>`_.
 
 © 2019, Tony Crisci
 

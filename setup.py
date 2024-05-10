@@ -24,7 +24,7 @@ EXTRAS = {}
 here = os.path.abspath(os.path.dirname(__file__))
 
 about = {}
-with open(os.path.join(here, 'dbus_next', '__version__.py')) as f:
+with open(os.path.join(here, 'dbus_ezy', '__version__.py')) as f:
     exec(f.read(), about)
 
 with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:

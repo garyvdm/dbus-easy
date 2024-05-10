@@ -1,5 +1,5 @@
-from dbus_next import PropertyAccess, introspection as intr
-from dbus_next.service import method, signal, dbus_property, ServiceInterface
+from dbus_ezy import PropertyAccess, introspection as intr
+from dbus_ezy.service import method, signal, dbus_property, ServiceInterface
 
 
 class ExampleInterface(ServiceInterface):

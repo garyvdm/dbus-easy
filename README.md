@@ -1,6 +1,6 @@
 # dbus-easy
 
-This is a fork of dbus-next. I plan to try improve the easy of use of the library, but for flexibility sake, I don't plan on staying compatible with dbus-next.
+This is a fork of dbus-ezy. I plan to try improve the easy of use of the library, but for flexibility sake, I don't plan on staying compatible with dbus-ezy.
 
 I am in early phases of this work.
 
@@ -13,13 +13,13 @@ The next great DBus library for Python.
 
 [Chat](https://discord.gg/UdbXHVX)
 
-python-dbus-next is a Python library for DBus that aims to be a fully featured high level library primarily geared towards integration of applications into Linux desktop and mobile environments.
+dbus-ezy is a Python library for DBus that aims to be a fully featured high level library primarily geared towards integration of applications into Linux desktop and mobile environments.
 
 Desktop application developers can use this library for integrating their applications into desktop environments by implementing common DBus standard interfaces or creating custom plugin interfaces.
 
 Desktop users can use this library to create their own scripts and utilities to interact with those interfaces for customization of their desktop environment.
 
-python-dbus-next plans to improve over other DBus libraries for Python in the following ways:
+dbus-ezy plans to improve over other DBus libraries for Python in the following ways:
 
 * Zero dependencies and pure Python 3.
 * Support for multiple IO backends including asyncio and the GLib main loop.
@@ -31,10 +31,10 @@ python-dbus-next plans to improve over other DBus libraries for Python in the fo
 
 ## Installing
 
-This library is available on PyPi as [dbus-next](https://pypi.org/project/dbus-next/).
+This library is available on PyPi as [dbus-ezy](https://pypi.org/project/dbus-ezy/).
 
 ```
-pip3 install dbus-next
+pip3 install dbus-ezy
 ```
 
 ## The Client Interface
@@ -46,7 +46,7 @@ For more information, see the [overview for the high-level client](https://pytho
 This example connects to a media player and controls it with the [MPRIS](https://specifications.freedesktop.org/mpris-spec/latest/) DBus interface.
 
 ```python
-from dbus_next.aio import MessageBus
+from dbus_ezy.aio import MessageBus
 
 import asyncio
 
@@ -87,11 +87,11 @@ loop.run_until_complete(main())
 
 To define a service on the bus, use the `ServiceInterface` class and decorate class methods to specify DBus methods, properties, and signals with their type signatures.
 
-For more information, see the [overview for the high-level service](https://python-dbus-next.readthedocs.io/en/latest/high-level-service/index.html).
+For more information, see the [overview for the high-level service](https://python-dbus-ezy.readthedocs.io/en/latest/high-level-service/index.html).
 
 ```python
-from dbus_next.service import ServiceInterface, method, dbus_property, signal, Variant
-from dbus_next.aio import MessageBus
+from dbus_ezy.service import ServiceInterface, method, dbus_property, signal, Variant
+from dbus_ezy.aio import MessageBus
 
 import asyncio
 
@@ -140,11 +140,11 @@ asyncio.get_event_loop().run_until_complete(main())
 
 The low-level interface works with DBus messages directly.
 
-For more information, see the [overview for the low-level interface](https://python-dbus-next.readthedocs.io/en/latest/low-level-interface/index.html).
+For more information, see the [overview for the low-level interface](https://python-dbus-ezy.readthedocs.io/en/latest/low-level-interface/index.html).
 
 ```python
-from dbus_next.message import Message, MessageType
-from dbus_next.aio import MessageBus
+from dbus_ezy.message import Message, MessageType
+from dbus_ezy.aio import MessageBus
 
 import asyncio
 import json
@@ -170,14 +170,9 @@ async def main():
 loop.run_until_complete(main())
 ```
 
-## Projects that use python-dbus-next
-
-* The [Playerctl](https://github.com/altdesktop/playerctl) test suite
-* [i3-dstatus](https://github.com/altdesktop/i3-dstatus)
-
 ## Contributing
 
-Contributions are welcome. Development happens on [Github](https://github.com/altdesktop/python-dbus-next).
+Contributions are welcome. Development happens on [Github](https://github.com/garyvdm/python-dbus-ezy).
 
 Before you commit, run `make` to run the linter, code formatter, and the test suite.
 

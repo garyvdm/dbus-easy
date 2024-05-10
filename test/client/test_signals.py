@@ -1,9 +1,9 @@
-from dbus_next.service import ServiceInterface, signal
-from dbus_next.aio import MessageBus
-from dbus_next import Message
-from dbus_next.introspection import Node
-from dbus_next.constants import RequestNameReply
-from dbus_next.message_bus import current_message
+from dbus_ezy.service import ServiceInterface, signal
+from dbus_ezy.aio import MessageBus
+from dbus_ezy import Message
+from dbus_ezy.introspection import Node
+from dbus_ezy.constants import RequestNameReply
+from dbus_ezy.message_bus import current_message
 
 import pytest
 

@@ -1,5 +1,5 @@
-from dbus_next import aio, glib, Message, DBusError
-from dbus_next.service import ServiceInterface, dbus_property, PropertyAccess
+from dbus_ezy import aio, glib, Message, DBusError
+from dbus_ezy.service import ServiceInterface, dbus_property, PropertyAccess
 from test.util import check_gi_repository, skip_reason_no_gi
 
 import pytest

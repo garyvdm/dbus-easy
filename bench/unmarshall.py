@@ -1,7 +1,7 @@
 import io
 import timeit
 
-from dbus_next._private.unmarshaller import Unmarshaller
+from dbus_ezy._private.unmarshaller import Unmarshaller
 
 bluez_rssi_message = (
     "6c04010134000000e25389019500000001016f00250000002f6f72672f626c75657a2f686369302f6465"

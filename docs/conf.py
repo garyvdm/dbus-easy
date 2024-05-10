@@ -16,7 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/..'))
 
-from dbus_next.__version__ import __title__, __author__, __version__, __copyright__
+from dbus_ezy.__version__ import __title__, __author__, __version__, __copyright__
 _project_slug = __title__.replace('_', '-')
 
 # -- Project information -----------------------------------------------------
@@ -101,7 +101,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'dbus-nextdoc'
+htmlhelp_basename = 'dbus-ezydoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -127,14 +127,14 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'dbus-next.tex', 'dbus-next Documentation', __author__, 'manual'),
+    (master_doc, 'dbus-ezy.tex', 'dbus-ezy Documentation', __author__, 'manual'),
 ]
 
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, _project_slug, 'dbus-next Documentation', [author], 1)]
+man_pages = [(master_doc, _project_slug, 'dbus-ezy Documentation', [author], 1)]
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -142,7 +142,7 @@ man_pages = [(master_doc, _project_slug, 'dbus-next Documentation', [author], 1)
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, _project_slug, 'dbus-next Documentation', author, _project_slug,
+    (master_doc, _project_slug, 'dbus-ezy Documentation', author, _project_slug,
      'One line description of project.', 'Miscellaneous'),
 ]
 

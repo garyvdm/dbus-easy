@@ -1,12 +1,12 @@
 ServiceInterface
 ================
 
-.. autoclass:: dbus_next.service.ServiceInterface
+.. autoclass:: dbus_ezy.service.ServiceInterface
     :members:
     :undoc-members:
 
-.. autodecorator:: dbus_next.service.dbus_property
+.. autodecorator:: dbus_ezy.service.dbus_property
 
-.. autodecorator:: dbus_next.service.method
+.. autodecorator:: dbus_ezy.service.method
 
-.. autodecorator:: dbus_next.service.signal
+.. autodecorator:: dbus_ezy.service.signal

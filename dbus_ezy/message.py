@@ -17,7 +17,7 @@ REQUIRED_FIELDS = {
 
 class Message:
     """A class for sending and receiving messages through the
-    :class:`MessageBus <dbus_next.message_bus.BaseMessageBus>` with the
+    :class:`MessageBus <dbus_ezy.message_bus.BaseMessageBus>` with the
     low-level api.
 
     A ``Message`` can be constructed by the user to send over the message bus.

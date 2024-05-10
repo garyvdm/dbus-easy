@@ -1,4 +1,4 @@
-from dbus_next import introspection as intr, ArgDirection, PropertyAccess, SignatureType
+from dbus_ezy import introspection as intr, ArgDirection, PropertyAccess, SignatureType
 
 import os
 

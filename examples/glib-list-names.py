@@ -4,8 +4,8 @@ import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
 
-from dbus_next import Message
-from dbus_next.glib import MessageBus
+from dbus_ezy import Message
+from dbus_ezy.glib import MessageBus
 
 import json
 import signal

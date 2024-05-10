@@ -4,9 +4,9 @@ import os
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
 
-from dbus_next.service import ServiceInterface, method, signal, dbus_property
-from dbus_next.aio.message_bus import MessageBus
-from dbus_next import Variant
+from dbus_ezy.service import ServiceInterface, method, signal, dbus_property
+from dbus_ezy.aio.message_bus import MessageBus
+from dbus_ezy import Variant
 
 import asyncio
 

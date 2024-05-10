@@ -1,6 +1,6 @@
-from dbus_next.service import ServiceInterface, method
-from dbus_next.aio import MessageBus
-from dbus_next import Message, MessageType, introspection as intr
+from dbus_ezy.service import ServiceInterface, method
+from dbus_ezy.aio import MessageBus
+from dbus_ezy import Message, MessageType, introspection as intr
 
 import pytest
 

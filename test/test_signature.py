@@ -1,5 +1,5 @@
-from dbus_next import SignatureTree, SignatureBodyMismatchError, Variant
-from dbus_next._private.util import signature_contains_type
+from dbus_ezy import SignatureTree, SignatureBodyMismatchError, Variant
+from dbus_ezy._private.util import signature_contains_type
 
 import pytest
 

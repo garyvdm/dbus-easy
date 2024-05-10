@@ -1,6 +1,6 @@
 from typing import Any, Dict
-from dbus_next._private.unmarshaller import Unmarshaller
-from dbus_next import Message, Variant, SignatureTree, MessageType, MessageFlag
+from dbus_ezy._private.unmarshaller import Unmarshaller
+from dbus_ezy import Message, Variant, SignatureTree, MessageType, MessageFlag
 
 import json
 import os

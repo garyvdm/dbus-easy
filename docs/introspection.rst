@@ -1,26 +1,26 @@
 Introspection
 =============
 
-.. autoclass:: dbus_next.introspection.Node
+.. autoclass:: dbus_ezy.introspection.Node
     :members:
     :undoc-members:
 
-.. autoclass:: dbus_next.introspection.Interface
+.. autoclass:: dbus_ezy.introspection.Interface
     :members:
     :undoc-members:
 
-.. autoclass:: dbus_next.introspection.Property
+.. autoclass:: dbus_ezy.introspection.Property
     :members:
     :undoc-members:
 
-.. autoclass:: dbus_next.introspection.Method
+.. autoclass:: dbus_ezy.introspection.Method
     :members:
     :undoc-members:
 
-.. autoclass:: dbus_next.introspection.Signal
+.. autoclass:: dbus_ezy.introspection.Signal
     :members:
     :undoc-members:
 
-.. autoclass:: dbus_next.introspection.Arg
+.. autoclass:: dbus_ezy.introspection.Arg
     :members:
     :undoc-members:

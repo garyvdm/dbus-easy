@@ -77,4 +77,4 @@ This version adds some major features and breaking changes.
 
 ## Version 0.0.1
 
-This is the first release of python-dbus-next.
+This is the first release of python-dbus-ezy.

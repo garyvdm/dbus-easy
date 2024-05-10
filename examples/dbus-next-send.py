@@ -2,10 +2,14 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
-from dbus_ezy.validators import (is_bus_name_valid, is_member_name_valid, is_object_path_valid,
-                                  is_interface_name_valid)
+from dbus_ezy.validators import (
+    is_bus_name_valid,
+    is_member_name_valid,
+    is_object_path_valid,
+    is_interface_name_valid,
+)
 from dbus_ezy.aio import MessageBus
 from dbus_ezy import MessageType, BusType, Message, Variant
 from argparse import ArgumentParser, OPTIONAL
@@ -15,20 +19,22 @@ import asyncio
 
 parser = ArgumentParser()
 
-parser.add_argument('--system', help='Use the system bus', action='store_true')
-parser.add_argument('--session', help='Use the session bus', action='store_true')
-parser.add_argument('--dest', help='The destination address for the message', required=True)
-parser.add_argument('--signature', help='The signature for the message body')
-parser.add_argument('--type',
-                    help='The type of message to send',
-                    choices=[e.name for e in MessageType],
-                    default=MessageType.METHOD_CALL.name,
-                    nargs=OPTIONAL)
-parser.add_argument('object_path', help='The object path for the message')
-parser.add_argument('interface.member', help='The interface and member for the message')
-parser.add_argument('body',
-                    help='The JSON encoded body of the message. Must match the signature',
-                    nargs=OPTIONAL)
+parser.add_argument("--system", help="Use the system bus", action="store_true")
+parser.add_argument("--session", help="Use the session bus", action="store_true")
+parser.add_argument("--dest", help="The destination address for the message", required=True)
+parser.add_argument("--signature", help="The signature for the message body")
+parser.add_argument(
+    "--type",
+    help="The type of message to send",
+    choices=[e.name for e in MessageType],
+    default=MessageType.METHOD_CALL.name,
+    nargs=OPTIONAL,
+)
+parser.add_argument("object_path", help="The object path for the message")
+parser.add_argument("interface.member", help="The interface and member for the message")
+parser.add_argument(
+    "body", help="The JSON encoded body of the message. Must match the signature", nargs=OPTIONAL
+)
 
 args = parser.parse_args()
 
@@ -40,15 +46,16 @@ def exit_error(message):
     sys.exit(1)
 
 
-interface_member = vars(args)['interface.member'].split('.')
+interface_member = vars(args)["interface.member"].split(".")
 
 if len(interface_member) < 2:
     exit_error(
-        f'Expecting an interface and member separated by a dot: {vars(args)["interface.member"]}')
+        f'Expecting an interface and member separated by a dot: {vars(args)["interface.member"]}'
+    )
 
 destination = args.dest
 member = interface_member[-1]
-interface = '.'.join(interface_member[:len(interface_member) - 1])
+interface = ".".join(interface_member[: len(interface_member) - 1])
 object_path = args.object_path
 signature = args.signature
 body = args.body
@@ -61,34 +68,34 @@ if args.system:
     bus_type = BusType.SYSTEM
 
 if message_type is not MessageType.METHOD_CALL:
-    exit_error('only message type METHOD_CALL is supported right now')
+    exit_error("only message type METHOD_CALL is supported right now")
 
 if not is_bus_name_valid(destination):
-    exit_error(f'got invalid bus name: {destination}')
+    exit_error(f"got invalid bus name: {destination}")
 
 if not is_object_path_valid(object_path):
-    exit_error(f'got invalid object path: {object_path}')
+    exit_error(f"got invalid object path: {object_path}")
 
 if not is_interface_name_valid(interface):
-    exit_error(f'got invalid interface name: {interface}')
+    exit_error(f"got invalid interface name: {interface}")
 
 if not is_member_name_valid(member):
-    exit_error(f'got invalid member name: {member}')
+    exit_error(f"got invalid member name: {member}")
 
 if body is None:
     body = []
-    signature = ''
+    signature = ""
 else:
     try:
         body = json.loads(body)
     except json.JSONDecodeError as e:
-        exit_error(f'could not parse body as JSON: ({e})')
+        exit_error(f"could not parse body as JSON: ({e})")
 
     if type(body) is not list:
-        exit_error('body must be an array of arguments')
+        exit_error("body must be an array of arguments")
 
     if not signature:
-        exit_error('--signature is a required argument when passing a message body')
+        exit_error("--signature is a required argument when passing a message body")
 
 loop = asyncio.get_event_loop()
 
@@ -96,19 +103,21 @@ loop = asyncio.get_event_loop()
 async def main():
     bus = await MessageBus(bus_type=bus_type).connect()
 
-    message = Message(destination=destination,
-                      member=member,
-                      interface=interface,
-                      path=object_path,
-                      signature=signature,
-                      body=body)
+    message = Message(
+        destination=destination,
+        member=member,
+        interface=interface,
+        path=object_path,
+        signature=signature,
+        body=body,
+    )
 
     result = await bus.call(message)
 
     ret = 0
 
     if result.message_type is MessageType.ERROR:
-        print(f'Error: {result.error_name}', file=sys.stderr)
+        print(f"Error: {result.error_name}", file=sys.stderr)
         ret = 1
 
     def default(o):

@@ -19,11 +19,11 @@ class ExampleInterface(ServiceInterface):
 
 @pytest.mark.asyncio
 async def test_export_unexport():
-    interface = ExampleInterface('test.interface')
-    interface2 = ExampleInterface('test.interface2')
+    interface = ExampleInterface("test.interface")
+    interface2 = ExampleInterface("test.interface2")
 
-    export_path = '/test/path'
-    export_path2 = '/test/path/child'
+    export_path = "/test/path"
+    export_path2 = "/test/path/child"
 
     bus = await MessageBus().connect()
     bus.export(export_path, interface)
@@ -38,7 +38,7 @@ async def test_export_unexport():
     assert len(node.interfaces) == standard_interfaces_count + 1
     assert len(node.nodes) == 1
     # relative path
-    assert node.nodes[0].name == 'child'
+    assert node.nodes[0].name == "child"
 
     bus.unexport(export_path, interface)
     assert export_path not in bus._path_exports
@@ -59,7 +59,7 @@ async def test_export_unexport():
     assert not bus._path_exports
     assert not ServiceInterface._get_buses(interface)
 
-    node = bus._introspect_export_path('/path/doesnt/exist')
+    node = bus._introspect_export_path("/path/doesnt/exist")
     assert type(node) is intr.Node
     assert not node.interfaces
     assert not node.nodes
@@ -69,44 +69,50 @@ async def test_export_unexport():
 async def test_export_alias():
     bus = await MessageBus().connect()
 
-    interface = ExampleInterface('test.interface')
+    interface = ExampleInterface("test.interface")
 
-    export_path = '/test/path'
-    export_path2 = '/test/path/child'
+    export_path = "/test/path"
+    export_path2 = "/test/path/child"
 
     bus.export(export_path, interface)
     bus.export(export_path2, interface)
 
     result = await bus.call(
-        Message(destination=bus.unique_name,
-                path=export_path,
-                interface='test.interface',
-                member='some_method'))
+        Message(
+            destination=bus.unique_name,
+            path=export_path,
+            interface="test.interface",
+            member="some_method",
+        )
+    )
     assert result.message_type is MessageType.METHOD_RETURN, result.body[0]
 
     assert interface._method_called
     interface._method_called = False
 
     result = await bus.call(
-        Message(destination=bus.unique_name,
-                path=export_path2,
-                interface='test.interface',
-                member='some_method'))
+        Message(
+            destination=bus.unique_name,
+            path=export_path2,
+            interface="test.interface",
+            member="some_method",
+        )
+    )
     assert result.message_type is MessageType.METHOD_RETURN, result.body[0]
     assert interface._method_called
 
 
 @pytest.mark.asyncio
 async def test_export_introspection():
-    interface = ExampleInterface('test.interface')
-    interface2 = ExampleInterface('test.interface2')
+    interface = ExampleInterface("test.interface")
+    interface2 = ExampleInterface("test.interface2")
 
-    export_path = '/test/path'
-    export_path2 = '/test/path/child'
+    export_path = "/test/path"
+    export_path2 = "/test/path/child"
 
     bus = await MessageBus().connect()
     bus.export(export_path, interface)
     bus.export(export_path2, interface2)
 
-    root = bus._introspect_export_path('/')
+    root = bus._introspect_export_path("/")
     assert len(root.nodes) == 1

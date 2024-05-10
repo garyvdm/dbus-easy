@@ -1,17 +1,22 @@
 from ._private.marshaller import Marshaller
 from .constants import MessageType, MessageFlag, ErrorType
 from ._private.constants import PROTOCOL_VERSION, HeaderField, LITTLE_ENDIAN
-from .validators import assert_bus_name_valid, assert_member_name_valid, assert_object_path_valid, assert_interface_name_valid
+from .validators import (
+    assert_bus_name_valid,
+    assert_member_name_valid,
+    assert_object_path_valid,
+    assert_interface_name_valid,
+)
 from .errors import InvalidMessageError
 from .signature import SignatureTree, Variant
 
 from typing import List, Any
 
 REQUIRED_FIELDS = {
-    MessageType.METHOD_CALL: ('path', 'member'),
-    MessageType.SIGNAL: ('path', 'member', 'interface'),
-    MessageType.ERROR: ('error_name', 'reply_serial'),
-    MessageType.METHOD_RETURN: ('reply_serial', ),
+    MessageType.METHOD_CALL: ("path", "member"),
+    MessageType.SIGNAL: ("path", "member", "interface"),
+    MessageType.ERROR: ("error_name", "reply_serial"),
+    MessageType.METHOD_RETURN: ("reply_serial",),
 }
 
 
@@ -61,20 +66,23 @@ class Message:
         - :class:`InvalidMemberNameError` - If ``member`` is not a valid member name.
         - :class:`InvalidInterfaceNameError` - If ``error_name`` or ``interface`` is not a valid interface name.
     """
-    def __init__(self,
-                 destination: str = None,
-                 path: str = None,
-                 interface: str = None,
-                 member: str = None,
-                 message_type: MessageType = MessageType.METHOD_CALL,
-                 flags: MessageFlag = MessageFlag.NONE,
-                 error_name: str = None,
-                 reply_serial: int = None,
-                 sender: str = None,
-                 unix_fds: List[int] = [],
-                 signature: str = '',
-                 body: List[Any] = [],
-                 serial: int = 0):
+
+    def __init__(
+        self,
+        destination: str = None,
+        path: str = None,
+        interface: str = None,
+        member: str = None,
+        message_type: MessageType = MessageType.METHOD_CALL,
+        flags: MessageFlag = MessageFlag.NONE,
+        error_name: str = None,
+        reply_serial: int = None,
+        sender: str = None,
+        unix_fds: List[int] = [],
+        signature: str = "",
+        body: List[Any] = [],
+        serial: int = 0,
+    ):
         self.destination = destination
         self.path = path
         self.interface = interface
@@ -86,8 +94,9 @@ class Message:
         self.sender = sender
         self.unix_fds = unix_fds
         self.signature = signature.signature if type(signature) is SignatureTree else signature
-        self.signature_tree = signature if type(signature) is SignatureTree else SignatureTree._get(
-            signature)
+        self.signature_tree = (
+            signature if type(signature) is SignatureTree else SignatureTree._get(signature)
+        )
         self.body = body
         self.serial = serial
 
@@ -104,13 +113,13 @@ class Message:
 
         required_fields = REQUIRED_FIELDS.get(self.message_type)
         if not required_fields:
-            raise InvalidMessageError(f'got unknown message type: {self.message_type}')
+            raise InvalidMessageError(f"got unknown message type: {self.message_type}")
         for field in required_fields:
             if not getattr(self, field):
-                raise InvalidMessageError(f'missing required field: {field}')
+                raise InvalidMessageError(f"missing required field: {field}")
 
     @staticmethod
-    def new_error(msg: 'Message', error_name: str, error_text: str) -> 'Message':
+    def new_error(msg: "Message", error_name: str, error_text: str) -> "Message":
         """A convenience constructor to create an error message in reply to the given message.
 
         :param msg: The message this error is in reply to.
@@ -125,18 +134,19 @@ class Message:
         :raises:
             - :class:`InvalidInterfaceNameError` - If the error_name is not a valid interface name.
         """
-        return Message(message_type=MessageType.ERROR,
-                       reply_serial=msg.serial,
-                       destination=msg.sender,
-                       error_name=error_name,
-                       signature='s',
-                       body=[error_text])
+        return Message(
+            message_type=MessageType.ERROR,
+            reply_serial=msg.serial,
+            destination=msg.sender,
+            error_name=error_name,
+            signature="s",
+            body=[error_text],
+        )
 
     @staticmethod
-    def new_method_return(msg: 'Message',
-                          signature: str = '',
-                          body: List[Any] = [],
-                          unix_fds: List[int] = []) -> 'Message':
+    def new_method_return(
+        msg: "Message", signature: str = "", body: List[Any] = [], unix_fds: List[int] = []
+    ) -> "Message":
         """A convenience constructor to create a method return to the given method call message.
 
         :param msg: The method call message this is a reply to.
@@ -154,20 +164,24 @@ class Message:
         :raises:
             - :class:`InvalidSignatureError` - If the signature is not a valid signature.
         """
-        return Message(message_type=MessageType.METHOD_RETURN,
-                       reply_serial=msg.serial,
-                       destination=msg.sender,
-                       signature=signature,
-                       body=body,
-                       unix_fds=unix_fds)
+        return Message(
+            message_type=MessageType.METHOD_RETURN,
+            reply_serial=msg.serial,
+            destination=msg.sender,
+            signature=signature,
+            body=body,
+            unix_fds=unix_fds,
+        )
 
     @staticmethod
-    def new_signal(path: str,
-                   interface: str,
-                   member: str,
-                   signature: str = '',
-                   body: List[Any] = None,
-                   unix_fds: List[int] = None) -> 'Message':
+    def new_signal(
+        path: str,
+        interface: str,
+        member: str,
+        signature: str = "",
+        body: List[Any] = None,
+        unix_fds: List[int] = None,
+    ) -> "Message":
         """A convenience constructor to create a new signal message.
 
         :param path: The path of this signal.
@@ -193,13 +207,15 @@ class Message:
             - :class:`InvalidMemberNameError` - If ``member`` is not a valid member name.
         """
         body = body if body else []
-        return Message(message_type=MessageType.SIGNAL,
-                       interface=interface,
-                       path=path,
-                       member=member,
-                       signature=signature,
-                       body=body,
-                       unix_fds=unix_fds)
+        return Message(
+            message_type=MessageType.SIGNAL,
+            interface=interface,
+            path=path,
+            member=member,
+            signature=signature,
+            body=body,
+            unix_fds=unix_fds,
+        )
 
     def _matches(self, **kwargs):
         for attr, val in kwargs.items():
@@ -216,27 +232,32 @@ class Message:
         fields = []
 
         if self.path:
-            fields.append([HeaderField.PATH.value, Variant('o', self.path)])
+            fields.append([HeaderField.PATH.value, Variant("o", self.path)])
         if self.interface:
-            fields.append([HeaderField.INTERFACE.value, Variant('s', self.interface)])
+            fields.append([HeaderField.INTERFACE.value, Variant("s", self.interface)])
         if self.member:
-            fields.append([HeaderField.MEMBER.value, Variant('s', self.member)])
+            fields.append([HeaderField.MEMBER.value, Variant("s", self.member)])
         if self.error_name:
-            fields.append([HeaderField.ERROR_NAME.value, Variant('s', self.error_name)])
+            fields.append([HeaderField.ERROR_NAME.value, Variant("s", self.error_name)])
         if self.reply_serial:
-            fields.append([HeaderField.REPLY_SERIAL.value, Variant('u', self.reply_serial)])
+            fields.append([HeaderField.REPLY_SERIAL.value, Variant("u", self.reply_serial)])
         if self.destination:
-            fields.append([HeaderField.DESTINATION.value, Variant('s', self.destination)])
+            fields.append([HeaderField.DESTINATION.value, Variant("s", self.destination)])
         if self.signature:
-            fields.append([HeaderField.SIGNATURE.value, Variant('g', self.signature)])
+            fields.append([HeaderField.SIGNATURE.value, Variant("g", self.signature)])
         if self.unix_fds and negotiate_unix_fd:
-            fields.append([HeaderField.UNIX_FDS.value, Variant('u', len(self.unix_fds))])
+            fields.append([HeaderField.UNIX_FDS.value, Variant("u", len(self.unix_fds))])
 
         header_body = [
-            LITTLE_ENDIAN, self.message_type.value, self.flags.value, PROTOCOL_VERSION,
-            len(body_block.buffer), self.serial, fields
+            LITTLE_ENDIAN,
+            self.message_type.value,
+            self.flags.value,
+            PROTOCOL_VERSION,
+            len(body_block.buffer),
+            self.serial,
+            fields,
         ]
-        header_block = Marshaller('yyyyuua(yv)', header_body)
+        header_block = Marshaller("yyyyuua(yv)", header_body)
         header_block.marshall()
         header_block.align(8)
         return header_block.buffer + body_block.buffer

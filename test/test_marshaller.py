@@ -12,7 +12,7 @@ import pytest
 def print_buf(buf):
     i = 0
     while True:
-        p = buf[i:i + 8]
+        p = buf[i : i + 8]
         if not p:
             break
         print(p)
@@ -92,10 +92,9 @@ def test_marshalling_with_table():
         assert buf == data
 
 
-@pytest.mark.parametrize("unmarshall_table", (table, ))
+@pytest.mark.parametrize("unmarshall_table", (table,))
 def test_unmarshalling_with_table(unmarshall_table):
     for item in unmarshall_table:
-
         stream = io.BytesIO(bytes.fromhex(item["data"]))
         unmarshaller = Unmarshaller(stream)
         try:
@@ -113,18 +112,19 @@ def test_unmarshalling_with_table(unmarshall_table):
         message.body = body
 
         for attr in [
-                "body",
-                "signature",
-                "message_type",
-                "destination",
-                "path",
-                "interface",
-                "member",
-                "flags",
-                "serial",
+            "body",
+            "signature",
+            "message_type",
+            "destination",
+            "path",
+            "interface",
+            "member",
+            "flags",
+            "serial",
         ]:
-            assert getattr(unmarshaller.message,
-                           attr) == getattr(message, attr), f"attr doesnt match: {attr}"
+            assert getattr(unmarshaller.message, attr) == getattr(
+                message, attr
+            ), f"attr doesnt match: {attr}"
 
 
 def test_unmarshall_can_resume():
@@ -135,17 +135,19 @@ def test_unmarshall_can_resume():
         "746f702e444275732e50726f7065727469657300030173001100000050726f706572746965734368616e"
         "67656400000000000000080167000873617b73767d617300000007017300040000003a312e3400000000"
         "110000006f72672e626c75657a2e446576696365310000000e0000000000000004000000525353490001"
-        "6e00a7ff000000000000")
+        "6e00a7ff000000000000"
+    )
     message_bytes = bytes.fromhex(bluez_rssi_message)
 
     class SlowStream(io.IOBase):
         """A fake stream that will only give us one byte at a time."""
+
         def __init__(self):
             self.data = message_bytes
             self.pos = 0
 
         def read(self, n) -> bytes:
-            data = self.data[self.pos:self.pos + 1]
+            data = self.data[self.pos : self.pos + 1]
             self.pos += 1
             return data
 

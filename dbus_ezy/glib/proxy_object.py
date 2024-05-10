@@ -108,6 +108,7 @@ class ProxyInterface(BaseProxyInterface):
     :class:`DBusError <dbus_ezy.DBusError>` will be raised with information
     about the error.
     """
+
     def _add_method(self, intr_method):
         in_len = len(intr_method.in_args)
         out_len = len(intr_method.out_args)
@@ -115,7 +116,7 @@ class ProxyInterface(BaseProxyInterface):
         def method_fn(*args):
             if len(args) != in_len + 1:
                 raise TypeError(
-                    f'method {intr_method.name} expects {in_len} arguments and a callback (got {len(args)} args)'
+                    f"method {intr_method.name} expects {in_len} arguments and a callback (got {len(args)} args)"
                 )
 
             args = list(args)
@@ -143,12 +144,16 @@ class ProxyInterface(BaseProxyInterface):
                 callback(body, err)
 
             self.bus.call(
-                Message(destination=self.bus_name,
-                        path=self.path,
-                        interface=self.introspection.name,
-                        member=intr_method.name,
-                        signature=intr_method.in_signature,
-                        body=list(args)), call_notify)
+                Message(
+                    destination=self.bus_name,
+                    path=self.path,
+                    interface=self.introspection.name,
+                    member=intr_method.name,
+                    signature=intr_method.in_signature,
+                    body=list(args),
+                ),
+                call_notify,
+            )
 
         def method_fn_sync(*args):
             main = GLib.MainLoop()
@@ -171,8 +176,8 @@ class ProxyInterface(BaseProxyInterface):
 
             return call_body
 
-        method_name = f'call_{BaseProxyInterface._to_snake_case(intr_method.name)}'
-        method_name_sync = f'{method_name}_sync'
+        method_name = f"call_{BaseProxyInterface._to_snake_case(intr_method.name)}"
+        method_name_sync = f"{method_name}_sync"
 
         setattr(self, method_name, method_fn)
         setattr(self, method_name_sync, method_fn_sync)
@@ -192,21 +197,27 @@ class ProxyInterface(BaseProxyInterface):
 
                 variant = msg.body[0]
                 if variant.signature != intr_property.signature:
-                    err = DBusError(ErrorType.CLIENT_ERROR,
-                                    'property returned unexpected signature "{variant.signature}"',
-                                    msg)
+                    err = DBusError(
+                        ErrorType.CLIENT_ERROR,
+                        'property returned unexpected signature "{variant.signature}"',
+                        msg,
+                    )
                     callback(None, err)
                     return
 
                 callback(variant.value, None)
 
             self.bus.call(
-                Message(destination=self.bus_name,
-                        path=self.path,
-                        interface='org.freedesktop.DBus.Properties',
-                        member='Get',
-                        signature='ss',
-                        body=[self.introspection.name, intr_property.name]), call_notify)
+                Message(
+                    destination=self.bus_name,
+                    path=self.path,
+                    interface="org.freedesktop.DBus.Properties",
+                    member="Get",
+                    signature="ss",
+                    body=[self.introspection.name, intr_property.name],
+                ),
+                call_notify,
+            )
 
         def property_getter_sync():
             property_value = None
@@ -242,12 +253,16 @@ class ProxyInterface(BaseProxyInterface):
 
             variant = Variant(intr_property.signature, value)
             self.bus.call(
-                Message(destination=self.bus_name,
-                        path=self.path,
-                        interface='org.freedesktop.DBus.Properties',
-                        member='Set',
-                        signature='ssv',
-                        body=[self.introspection.name, intr_property.name, variant]), call_notify)
+                Message(
+                    destination=self.bus_name,
+                    path=self.path,
+                    interface="org.freedesktop.DBus.Properties",
+                    member="Set",
+                    signature="ssv",
+                    body=[self.introspection.name, intr_property.name, variant],
+                ),
+                call_notify,
+            )
 
         def property_setter_sync(val):
             reply_error = None
@@ -266,10 +281,10 @@ class ProxyInterface(BaseProxyInterface):
             return None
 
         snake_case = super()._to_snake_case(intr_property.name)
-        setattr(self, f'get_{snake_case}', property_getter)
-        setattr(self, f'get_{snake_case}_sync', property_getter_sync)
-        setattr(self, f'set_{snake_case}', property_setter)
-        setattr(self, f'set_{snake_case}_sync', property_setter_sync)
+        setattr(self, f"get_{snake_case}", property_getter)
+        setattr(self, f"get_{snake_case}_sync", property_getter_sync)
+        setattr(self, f"set_{snake_case}", property_setter)
+        setattr(self, f"set_{snake_case}_sync", property_setter_sync)
 
 
 class ProxyObject(BaseProxyObject):
@@ -277,12 +292,18 @@ class ProxyObject(BaseProxyObject):
 
     For more information, see the :class:`BaseProxyObject <dbus_ezy.proxy_object.BaseProxyObject>`.
     """
-    def __init__(self, bus_name: str, path: str, introspection: Union[intr.Node, str, ET.Element],
-                 bus: BaseMessageBus):
+
+    def __init__(
+        self,
+        bus_name: str,
+        path: str,
+        introspection: Union[intr.Node, str, ET.Element],
+        bus: BaseMessageBus,
+    ):
         super().__init__(bus_name, path, introspection, bus, ProxyInterface)
 
     def get_interface(self, name: str) -> ProxyInterface:
         return super().get_interface(name)
 
-    def get_children(self) -> List['ProxyObject']:
+    def get_children(self) -> List["ProxyObject"]:
         return super().get_children()

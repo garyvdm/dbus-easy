@@ -39,47 +39,57 @@ class BaseProxyInterface:
     :ivar bus: The message bus this proxy interface is connected to.
     :vartype bus: :class:`BaseMessageBus <dbus_ezy.message_bus.BaseMessageBus>`
     """
-    def __init__(self, bus_name, path, introspection, bus):
 
+    def __init__(self, bus_name, path, introspection, bus):
         self.bus_name = bus_name
         self.path = path
         self.introspection = introspection
         self.bus = bus
         self._signal_handlers = {}
-        self._signal_match_rule = f"type='signal',sender={bus_name},interface={introspection.name},path={path}"
+        self._signal_match_rule = (
+            f"type='signal',sender={bus_name},interface={introspection.name},path={path}"
+        )
 
-    _underscorer1 = re.compile(r'(.)([A-Z][a-z]+)')
-    _underscorer2 = re.compile(r'([a-z0-9])([A-Z])')
+    _underscorer1 = re.compile(r"(.)([A-Z][a-z]+)")
+    _underscorer2 = re.compile(r"([a-z0-9])([A-Z])")
 
     @staticmethod
     def _to_snake_case(member):
-        subbed = BaseProxyInterface._underscorer1.sub(r'\1_\2', member)
-        return BaseProxyInterface._underscorer2.sub(r'\1_\2', subbed).lower()
+        subbed = BaseProxyInterface._underscorer1.sub(r"\1_\2", member)
+        return BaseProxyInterface._underscorer2.sub(r"\1_\2", subbed).lower()
 
     @staticmethod
     def _check_method_return(msg, signature=None):
         if msg.message_type == MessageType.ERROR:
             raise DBusError._from_message(msg)
         elif msg.message_type != MessageType.METHOD_RETURN:
-            raise DBusError(ErrorType.CLIENT_ERROR, 'method call didnt return a method return', msg)
+            raise DBusError(ErrorType.CLIENT_ERROR, "method call didnt return a method return", msg)
         elif signature is not None and msg.signature != signature:
-            raise DBusError(ErrorType.CLIENT_ERROR,
-                            f'method call returned unexpected signature: "{msg.signature}"', msg)
+            raise DBusError(
+                ErrorType.CLIENT_ERROR,
+                f'method call returned unexpected signature: "{msg.signature}"',
+                msg,
+            )
 
     def _add_method(self, intr_method):
-        raise NotImplementedError('this must be implemented in the inheriting class')
+        raise NotImplementedError("this must be implemented in the inheriting class")
 
     def _add_property(self, intr_property):
-        raise NotImplementedError('this must be implemented in the inheriting class')
+        raise NotImplementedError("this must be implemented in the inheriting class")
 
     def _message_handler(self, msg):
-        if not msg._matches(message_type=MessageType.SIGNAL,
-                            interface=self.introspection.name,
-                            path=self.path) or msg.member not in self._signal_handlers:
+        if (
+            not msg._matches(
+                message_type=MessageType.SIGNAL, interface=self.introspection.name, path=self.path
+            )
+            or msg.member not in self._signal_handlers
+        ):
             return
 
-        if msg.sender != self.bus_name and self.bus._name_owners.get(self.bus_name,
-                                                                     '') != msg.sender:
+        if (
+            msg.sender != self.bus_name
+            and self.bus._name_owners.get(self.bus_name, "") != msg.sender
+        ):
             # The sender is always a unique name, but the bus name given might
             # be a well known name. If the sender isn't an exact match, check
             # to see if it owns the bus_name we were given from the cache kept
@@ -107,7 +117,8 @@ class BaseProxyInterface:
             fn_signature = inspect.signature(fn)
             if not callable(fn) or len(fn_signature.parameters) != len(intr_signal.args):
                 raise TypeError(
-                    f'reply_notify must be a function with {len(intr_signal.args)} parameters')
+                    f"reply_notify must be a function with {len(intr_signal.args)} parameters"
+                )
 
             if not self._signal_handlers:
                 self.bus._add_match_rule(self._signal_match_rule)
@@ -132,8 +143,8 @@ class BaseProxyInterface:
                 self.bus.remove_message_handler(self._message_handler)
 
         snake_case = BaseProxyInterface._to_snake_case(intr_signal.name)
-        setattr(interface, f'on_{snake_case}', on_signal_fn)
-        setattr(interface, f'off_{snake_case}', off_signal_fn)
+        setattr(interface, f"on_{snake_case}", on_signal_fn)
+        setattr(interface, f"off_{snake_case}", off_signal_fn)
 
 
 class BaseProxyObject:
@@ -170,15 +181,22 @@ class BaseProxyObject:
         - :class:`InvalidObjectPathError <dbus_ezy.InvalidObjectPathError>` - If the given object path is not valid.
         - :class:`InvalidIntrospectionError <dbus_ezy.InvalidIntrospectionError>` - If the introspection data for the node is not valid.
     """
-    def __init__(self, bus_name: str, path: str, introspection: Union[intr.Node, str, ET.Element],
-                 bus: 'message_bus.BaseMessageBus', ProxyInterface: Type[BaseProxyInterface]):
+
+    def __init__(
+        self,
+        bus_name: str,
+        path: str,
+        introspection: Union[intr.Node, str, ET.Element],
+        bus: "message_bus.BaseMessageBus",
+        ProxyInterface: Type[BaseProxyInterface],
+    ):
         assert_object_path_valid(path)
         assert_bus_name_valid(bus_name)
 
         if not isinstance(bus, message_bus.BaseMessageBus):
-            raise TypeError('bus must be an instance of BaseMessageBus')
+            raise TypeError("bus must be an instance of BaseMessageBus")
         if not issubclass(ProxyInterface, BaseProxyInterface):
-            raise TypeError('ProxyInterface must be an instance of BaseProxyInterface')
+            raise TypeError("ProxyInterface must be an instance of BaseProxyInterface")
 
         if type(introspection) is intr.Node:
             self.introspection = introspection
@@ -188,13 +206,14 @@ class BaseProxyObject:
             self.introspection = intr.Node.from_xml(introspection)
         else:
             raise TypeError(
-                'introspection must be xml node introspection or introspection.Node class')
+                "introspection must be xml node introspection or introspection.Node class"
+            )
 
         self.bus_name = bus_name
         self.path = path
         self.bus = bus
         self.ProxyInterface = ProxyInterface
-        self.child_paths = [f'{path}/{n.name}' for n in self.introspection.nodes]
+        self.child_paths = [f"{path}/{n.name}" for n in self.introspection.nodes]
 
         self._interfaces = {}
 
@@ -216,7 +235,7 @@ class BaseProxyObject:
         try:
             intr_interface = next(i for i in self.introspection.interfaces if i.name == name)
         except StopIteration:
-            raise InterfaceNotFoundError(f'interface not found on this object: {name}')
+            raise InterfaceNotFoundError(f"interface not found on this object: {name}")
 
         interface = self.ProxyInterface(self.bus_name, self.path, intr_interface, self.bus)
 
@@ -238,19 +257,23 @@ class BaseProxyObject:
 
             self.bus._name_owners[self.bus_name] = msg.body[0]
 
-        if self.bus_name[0] != ':' and not self.bus._name_owners.get(self.bus_name, ''):
+        if self.bus_name[0] != ":" and not self.bus._name_owners.get(self.bus_name, ""):
             self.bus._call(
-                Message(destination='org.freedesktop.DBus',
-                        interface='org.freedesktop.DBus',
-                        path='/org/freedesktop/DBus',
-                        member='GetNameOwner',
-                        signature='s',
-                        body=[self.bus_name]), get_owner_notify)
+                Message(
+                    destination="org.freedesktop.DBus",
+                    interface="org.freedesktop.DBus",
+                    path="/org/freedesktop/DBus",
+                    member="GetNameOwner",
+                    signature="s",
+                    body=[self.bus_name],
+                ),
+                get_owner_notify,
+            )
 
         self._interfaces[name] = interface
         return interface
 
-    def get_children(self) -> List['BaseProxyObject']:
+    def get_children(self) -> List["BaseProxyObject"]:
         """Get the child nodes of this proxy object according to the introspection data."""
         if self._children is None:
             self._children = [

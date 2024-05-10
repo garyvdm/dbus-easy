@@ -1,7 +1,14 @@
 from ..message_bus import BaseMessageBus
 from .._private.unmarshaller import Unmarshaller
 from ..message import Message
-from ..constants import BusType, NameFlag, RequestNameReply, ReleaseNameReply, MessageType, MessageFlag
+from ..constants import (
+    BusType,
+    NameFlag,
+    RequestNameReply,
+    ReleaseNameReply,
+    MessageType,
+    MessageFlag,
+)
 from ..service import ServiceInterface
 from ..errors import AuthError
 from .proxy_object import ProxyObject
@@ -57,12 +64,13 @@ class _MessageWriter:
                         self.fut = fut
 
                     if self.unix_fds and self.negotiate_unix_fd:
-                        ancdata = [(socket.SOL_SOCKET, socket.SCM_RIGHTS,
-                                    array.array("i", self.unix_fds))]
-                        self.offset += self.sock.sendmsg([self.buf[self.offset:]], ancdata)
+                        ancdata = [
+                            (socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", self.unix_fds))
+                        ]
+                        self.offset += self.sock.sendmsg([self.buf[self.offset :]], ancdata)
                         self.unix_fds = None
                     else:
-                        self.offset += self.sock.send(self.buf[self.offset:])
+                        self.offset += self.sock.send(self.buf[self.offset :])
 
                     if self.offset >= len(self.buf):
                         # finished writing
@@ -82,7 +90,8 @@ class _MessageWriter:
 
     def buffer_message(self, msg: Message, future=None):
         self.messages.put_nowait(
-            (msg._marshall(negotiate_unix_fd=self.negotiate_unix_fd), copy(msg.unix_fds), future))
+            (msg._marshall(negotiate_unix_fd=self.negotiate_unix_fd), copy(msg.unix_fds), future)
+        )
 
     def schedule_write(self, msg: Message = None, future=None):
         if msg is not None:
@@ -122,11 +131,14 @@ class MessageBus(BaseMessageBus):
         and receive messages.
     :vartype connected: bool
     """
-    def __init__(self,
-                 bus_address: str = None,
-                 bus_type: BusType = BusType.SESSION,
-                 auth: Authenticator = None,
-                 negotiate_unix_fd=False):
+
+    def __init__(
+        self,
+        bus_address: str = None,
+        bus_type: BusType = BusType.SESSION,
+        auth: Authenticator = None,
+        negotiate_unix_fd=False,
+    ):
         super().__init__(bus_address, bus_type, ProxyObject)
         self._negotiate_unix_fd = negotiate_unix_fd
         self._loop = asyncio.get_event_loop()
@@ -141,7 +153,7 @@ class MessageBus(BaseMessageBus):
 
         self._disconnect_future = self._loop.create_future()
 
-    async def connect(self) -> 'MessageBus':
+    async def connect(self) -> "MessageBus":
         """Connect this message bus to the DBus daemon.
 
         This method must be called before the message bus can be used.
@@ -172,11 +184,13 @@ class MessageBus(BaseMessageBus):
                 self.disconnect()
                 self._finalize(err)
 
-        hello_msg = Message(destination='org.freedesktop.DBus',
-                            path='/org/freedesktop/DBus',
-                            interface='org.freedesktop.DBus',
-                            member='Hello',
-                            serial=self.next_serial())
+        hello_msg = Message(
+            destination="org.freedesktop.DBus",
+            path="/org/freedesktop/DBus",
+            interface="org.freedesktop.DBus",
+            member="Hello",
+            serial=self.next_serial(),
+        )
 
         self._method_return_handlers[hello_msg.serial] = on_hello
         self._stream.write(hello_msg._marshall())
@@ -302,7 +316,10 @@ class MessageBus(BaseMessageBus):
         :raises:
             - :class:`Exception` - If a connection error occurred.
         """
-        if msg.flags & MessageFlag.NO_REPLY_EXPECTED or msg.message_type is not MessageType.METHOD_CALL:
+        if (
+            msg.flags & MessageFlag.NO_REPLY_EXPECTED
+            or msg.message_type is not MessageType.METHOD_CALL
+        ):
             await self.send(msg)
             return None
 
@@ -365,7 +382,8 @@ class MessageBus(BaseMessageBus):
                 with send_reply:
                     result = fut.result()
                     body, unix_fds = ServiceInterface._fn_result_to_body(
-                        result, method.out_signature_tree)
+                        result, method.out_signature_tree
+                    )
                     send_reply(Message.new_method_return(msg, method.out_signature, body, unix_fds))
 
             args = ServiceInterface._msg_body_to_args(msg)
@@ -386,19 +404,19 @@ class MessageBus(BaseMessageBus):
             self._finalize(e)
 
     async def _auth_readline(self):
-        buf = b''
-        while buf[-2:] != b'\r\n':
+        buf = b""
+        while buf[-2:] != b"\r\n":
             buf += await self._loop.sock_recv(self._sock, 2)
         return buf[:-2].decode()
 
     async def _authenticate(self):
-        await self._loop.sock_sendall(self._sock, b'\0')
+        await self._loop.sock_sendall(self._sock, b"\0")
 
         first_line = self._auth._authentication_start(negotiate_unix_fd=self._negotiate_unix_fd)
 
         if first_line is not None:
             if type(first_line) is not str:
-                raise AuthError('authenticator gave response not type str')
+                raise AuthError("authenticator gave response not type str")
             await self._loop.sock_sendall(self._sock, Authenticator._format_line(first_line))
 
         while True:
@@ -406,7 +424,7 @@ class MessageBus(BaseMessageBus):
             if response is not None:
                 await self._loop.sock_sendall(self._sock, Authenticator._format_line(response))
                 self._stream.flush()
-            if response == 'BEGIN':
+            if response == "BEGIN":
                 break
 
     def _create_unmarshaller(self):
@@ -419,11 +437,11 @@ class MessageBus(BaseMessageBus):
         try:
             self._loop.remove_reader(self._fd)
         except Exception:
-            logging.warning('could not remove message reader', exc_info=True)
+            logging.warning("could not remove message reader", exc_info=True)
         try:
             self._loop.remove_writer(self._fd)
         except Exception:
-            logging.warning('could not remove message writer', exc_info=True)
+            logging.warning("could not remove message writer", exc_info=True)
 
         super()._finalize(err)
 

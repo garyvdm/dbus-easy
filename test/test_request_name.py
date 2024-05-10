@@ -8,19 +8,22 @@ has_gi = check_gi_repository()
 
 @pytest.mark.asyncio
 async def test_name_requests():
-    test_name = 'aio.test.request.name'
+    test_name = "aio.test.request.name"
 
     bus1 = await aio.MessageBus().connect()
     bus2 = await aio.MessageBus().connect()
 
     async def get_name_owner(name):
         reply = await bus1.call(
-            Message(destination='org.freedesktop.DBus',
-                    path='/org/freedesktop/DBus',
-                    interface='org.freedesktop.DBus',
-                    member='GetNameOwner',
-                    signature='s',
-                    body=[name]))
+            Message(
+                destination="org.freedesktop.DBus",
+                path="/org/freedesktop/DBus",
+                interface="org.freedesktop.DBus",
+                member="GetNameOwner",
+                signature="s",
+                body=[name],
+            )
+        )
 
         assert reply.message_type == MessageType.METHOD_RETURN
         return reply.body[0]
@@ -36,7 +39,7 @@ async def test_name_requests():
     reply = await bus1.release_name(test_name)
     assert reply == ReleaseNameReply.RELEASED
 
-    reply = await bus1.release_name('name.doesnt.exist')
+    reply = await bus1.release_name("name.doesnt.exist")
     assert reply == ReleaseNameReply.NON_EXISTENT
 
     reply = await bus1.release_name(test_name)
@@ -57,7 +60,7 @@ async def test_name_requests():
 
 @pytest.mark.skipif(not has_gi, reason=skip_reason_no_gi)
 def test_request_name_glib():
-    test_name = 'glib.test.request.name'
+    test_name = "glib.test.request.name"
     bus = glib.MessageBus().connect_sync()
 
     reply = bus.request_name_sync(test_name)

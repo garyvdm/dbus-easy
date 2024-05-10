@@ -17,16 +17,16 @@ class ExampleInterface(ServiceInterface):
         assert type(self) is ExampleInterface
 
     @signal()
-    def signal_simple(self) -> 's':
+    def signal_simple(self) -> "s":
         assert type(self) is ExampleInterface
-        return 'hello'
+        return "hello"
 
     @signal()
-    def signal_multiple(self) -> 'ss':
+    def signal_multiple(self) -> "ss":
         assert type(self) is ExampleInterface
-        return ['hello', 'world']
+        return ["hello", "world"]
 
-    @signal(name='renamed')
+    @signal(name="renamed")
     def original_name(self):
         assert type(self) is ExampleInterface
 
@@ -35,7 +35,7 @@ class ExampleInterface(ServiceInterface):
         assert type(self) is ExampleInterface
 
     @dbus_property(access=PropertyAccess.READ)
-    def test_prop(self) -> 'i':
+    def test_prop(self) -> "i":
         return 42
 
 
@@ -44,11 +44,11 @@ class SecondExampleInterface(ServiceInterface):
         super().__init__(name)
 
     @dbus_property(access=PropertyAccess.READ)
-    def str_prop(self) -> 's':
+    def str_prop(self) -> "s":
         return "abc"
 
     @dbus_property(access=PropertyAccess.READ)
-    def list_prop(self) -> 'ai':
+    def list_prop(self) -> "ai":
         return [1, 2, 3]
 
 
@@ -93,49 +93,60 @@ async def test_signals():
     bus1 = await MessageBus().connect()
     bus2 = await MessageBus().connect()
 
-    interface = ExampleInterface('test.interface')
-    export_path = '/test/path'
+    interface = ExampleInterface("test.interface")
+    export_path = "/test/path"
     bus1.export(export_path, interface)
 
     await bus2.call(
-        Message(destination='org.freedesktop.DBus',
-                path='/org/freedesktop/DBus',
-                interface='org.freedesktop.DBus',
-                member='AddMatch',
-                signature='s',
-                body=[f'sender={bus1.unique_name}']))
+        Message(
+            destination="org.freedesktop.DBus",
+            path="/org/freedesktop/DBus",
+            interface="org.freedesktop.DBus",
+            member="AddMatch",
+            signature="s",
+            body=[f"sender={bus1.unique_name}"],
+        )
+    )
 
     async with ExpectMessage(bus1, bus2, interface.name) as expected_signal:
         interface.signal_empty()
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='signal_empty',
-                         signature='',
-                         body=[])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="signal_empty",
+            signature="",
+            body=[],
+        )
 
     async with ExpectMessage(bus1, bus2, interface.name) as expected_signal:
         interface.original_name()
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='renamed',
-                         signature='',
-                         body=[])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="renamed",
+            signature="",
+            body=[],
+        )
 
     async with ExpectMessage(bus1, bus2, interface.name) as expected_signal:
         interface.signal_simple()
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='signal_simple',
-                         signature='s',
-                         body=['hello'])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="signal_simple",
+            signature="s",
+            body=["hello"],
+        )
 
     async with ExpectMessage(bus1, bus2, interface.name) as expected_signal:
         interface.signal_multiple()
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='signal_multiple',
-                         signature='ss',
-                         body=['hello', 'world'])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="signal_multiple",
+            signature="ss",
+            body=["hello", "world"],
+        )
 
     with pytest.raises(SignalDisabledError):
         interface.signal_disabled()
@@ -147,66 +158,73 @@ async def test_interface_add_remove_signal():
     bus2 = await MessageBus().connect()
 
     await bus2.call(
-        Message(destination='org.freedesktop.DBus',
-                path='/org/freedesktop/DBus',
-                interface='org.freedesktop.DBus',
-                member='AddMatch',
-                signature='s',
-                body=[f'sender={bus1.unique_name}']))
+        Message(
+            destination="org.freedesktop.DBus",
+            path="/org/freedesktop/DBus",
+            interface="org.freedesktop.DBus",
+            member="AddMatch",
+            signature="s",
+            body=[f"sender={bus1.unique_name}"],
+        )
+    )
 
-    first_interface = ExampleInterface('test.interface.first')
-    second_interface = SecondExampleInterface('test.interface.second')
-    export_path = '/test/path'
+    first_interface = ExampleInterface("test.interface.first")
+    second_interface = SecondExampleInterface("test.interface.second")
+    export_path = "/test/path"
 
     # add first interface
-    async with ExpectMessage(bus1, bus2, 'org.freedesktop.DBus.ObjectManager') as expected_signal:
+    async with ExpectMessage(bus1, bus2, "org.freedesktop.DBus.ObjectManager") as expected_signal:
         bus1.export(export_path, first_interface)
         assert_signal_ok(
             signal=await expected_signal,
             export_path=export_path,
-            member='InterfacesAdded',
-            signature='oa{sa{sv}}',
-            body=[export_path, {
-                'test.interface.first': {
-                    'test_prop': Variant('i', 42)
-                }
-            }])
+            member="InterfacesAdded",
+            signature="oa{sa{sv}}",
+            body=[export_path, {"test.interface.first": {"test_prop": Variant("i", 42)}}],
+        )
 
     # add second interface
-    async with ExpectMessage(bus1, bus2, 'org.freedesktop.DBus.ObjectManager') as expected_signal:
+    async with ExpectMessage(bus1, bus2, "org.freedesktop.DBus.ObjectManager") as expected_signal:
         bus1.export(export_path, second_interface)
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='InterfacesAdded',
-                         signature='oa{sa{sv}}',
-                         body=[
-                             export_path, {
-                                 'test.interface.second': {
-                                     'str_prop': Variant('s', "abc"),
-                                     'list_prop': Variant('ai', [1, 2, 3])
-                                 }
-                             }
-                         ])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="InterfacesAdded",
+            signature="oa{sa{sv}}",
+            body=[
+                export_path,
+                {
+                    "test.interface.second": {
+                        "str_prop": Variant("s", "abc"),
+                        "list_prop": Variant("ai", [1, 2, 3]),
+                    }
+                },
+            ],
+        )
 
     # remove single interface
-    async with ExpectMessage(bus1, bus2, 'org.freedesktop.DBus.ObjectManager') as expected_signal:
+    async with ExpectMessage(bus1, bus2, "org.freedesktop.DBus.ObjectManager") as expected_signal:
         bus1.unexport(export_path, second_interface)
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='InterfacesRemoved',
-                         signature='oas',
-                         body=[export_path, ['test.interface.second']])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="InterfacesRemoved",
+            signature="oas",
+            body=[export_path, ["test.interface.second"]],
+        )
 
     # add second interface again
-    async with ExpectMessage(bus1, bus2, 'org.freedesktop.DBus.ObjectManager') as expected_signal:
+    async with ExpectMessage(bus1, bus2, "org.freedesktop.DBus.ObjectManager") as expected_signal:
         bus1.export(export_path, second_interface)
         await expected_signal
 
     # remove multiple interfaces
-    async with ExpectMessage(bus1, bus2, 'org.freedesktop.DBus.ObjectManager') as expected_signal:
+    async with ExpectMessage(bus1, bus2, "org.freedesktop.DBus.ObjectManager") as expected_signal:
         bus1.unexport(export_path)
-        assert_signal_ok(signal=await expected_signal,
-                         export_path=export_path,
-                         member='InterfacesRemoved',
-                         signature='oas',
-                         body=[export_path, ['test.interface.first', 'test.interface.second']])
+        assert_signal_ok(
+            signal=await expected_signal,
+            export_path=export_path,
+            member="InterfacesRemoved",
+            signature="oas",
+            body=[export_path, ["test.interface.first", "test.interface.second"]],
+        )

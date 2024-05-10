@@ -1,11 +1,16 @@
 import re
-from .errors import InvalidBusNameError, InvalidObjectPathError, InvalidInterfaceNameError, InvalidMemberNameError
+from .errors import (
+    InvalidBusNameError,
+    InvalidObjectPathError,
+    InvalidInterfaceNameError,
+    InvalidMemberNameError,
+)
 from functools import lru_cache
 
-_bus_name_re = re.compile(r'^[A-Za-z_-][A-Za-z0-9_-]*$')
-_path_re = re.compile(r'^[A-Za-z0-9_]+$')
-_element_re = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
-_member_re = re.compile(r'^[A-Za-z_][A-Za-z0-9_-]*$')
+_bus_name_re = re.compile(r"^[A-Za-z_-][A-Za-z0-9_-]*$")
+_path_re = re.compile(r"^[A-Za-z0-9_]+$")
+_element_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_member_re = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 
 
 @lru_cache(maxsize=32)
@@ -26,17 +31,17 @@ def is_bus_name_valid(name: str) -> bool:
     if not name or len(name) > 255:
         return False
 
-    if name.startswith(':'):
+    if name.startswith(":"):
         # a unique bus name
         return True
 
-    if name.startswith('.'):
+    if name.startswith("."):
         return False
 
-    if name.find('.') == -1:
+    if name.find(".") == -1:
         return False
 
-    for element in name.split('.'):
+    for element in name.split("."):
         if _bus_name_re.search(element) is None:
             return False
 
@@ -61,13 +66,13 @@ def is_object_path_valid(path: str) -> bool:
     if not path:
         return False
 
-    if not path.startswith('/'):
+    if not path.startswith("/"):
         return False
 
     if len(path) == 1:
         return True
 
-    for element in path[1:].split('/'):
+    for element in path[1:].split("/"):
         if _path_re.search(element) is None:
             return False
 
@@ -92,13 +97,13 @@ def is_interface_name_valid(name: str) -> bool:
     if not name or len(name) > 255:
         return False
 
-    if name.startswith('.'):
+    if name.startswith("."):
         return False
 
-    if name.find('.') == -1:
+    if name.find(".") == -1:
         return False
 
-    for element in name.split('.'):
+    for element in name.split("."):
         if _element_re.search(element) is None:
             return False
 

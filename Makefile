@@ -4,13 +4,13 @@
 source_dirs = dbus_ezy test examples
 
 lint:
-	python3 -m flake8 $(source_dirs)
+	python3 -m ruff check $(source_dirs)
 
 check: lint
-	python3 -m yapf -rdp $(source_dirs)
+	python3 -m ruff format --check $(source_dirs)
 
 format:
-	python3 -m yapf -rip $(source_dirs)
+	python3 -m ruff format $(source_dirs)
 
 test:
 	for py in python3.7 python3.9 python3.10 python3.8 ; do \

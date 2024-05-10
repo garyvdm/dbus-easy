@@ -15,6 +15,7 @@ from typing import Callable, Optional
 _import_error = None
 try:
     from gi.repository import GLib
+
     _GLibSource = GLib.Source
 except ImportError as e:
     _import_error = e
@@ -56,7 +57,7 @@ class _MessageSource(_GLibSource):
 class _MessageWritableSource(_GLibSource):
     def __init__(self, bus):
         self.bus = bus
-        self.buf = b''
+        self.buf = b""
         self.message_stream = None
         self.chunk_size = 128
 
@@ -70,18 +71,18 @@ class _MessageWritableSource(_GLibSource):
         try:
             if self.buf:
                 self.bus._stream.write(self.buf)
-                self.buf = b''
+                self.buf = b""
 
             if self.message_stream:
                 while True:
                     self.buf = self.message_stream.read(self.chunk_size)
-                    if self.buf == b'':
+                    if self.buf == b"":
                         break
                     self.bus._stream.write(self.buf)
                     if len(self.buf) < self.chunk_size:
-                        self.buf = b''
+                        self.buf = b""
                         break
-                    self.buf = b''
+                    self.buf = b""
 
             self.bus._stream.flush()
 
@@ -101,7 +102,7 @@ class _MessageWritableSource(_GLibSource):
 class _AuthLineSource(_GLibSource):
     def __init__(self, stream):
         self.stream = stream
-        self.buf = b''
+        self.buf = b""
 
     def prepare(self):
         return (False, -1)
@@ -111,7 +112,7 @@ class _AuthLineSource(_GLibSource):
 
     def dispatch(self, callback, user_data):
         self.buf += self.stream.read()
-        if self.buf[-2:] == b'\r\n':
+        if self.buf[-2:] == b"\r\n":
             resp = callback(self.buf.decode()[:-2])
             if resp:
                 return GLib.SOURCE_REMOVE
@@ -147,10 +148,13 @@ class MessageBus(BaseMessageBus):
         be :class:`None` until the message bus connects.
     :vartype unique_name: str
     """
-    def __init__(self,
-                 bus_address: str = None,
-                 bus_type: BusType = BusType.SESSION,
-                 auth: Authenticator = None):
+
+    def __init__(
+        self,
+        bus_address: str = None,
+        bus_type: BusType = BusType.SESSION,
+        auth: Authenticator = None,
+    ):
         if _import_error:
             raise _import_error
 
@@ -164,7 +168,7 @@ class MessageBus(BaseMessageBus):
         else:
             self._auth = auth
 
-    def connect(self, connect_notify: Callable[['MessageBus', Optional[Exception]], None] = None):
+    def connect(self, connect_notify: Callable[["MessageBus", Optional[Exception]], None] = None):
         """Connect this message bus to the DBus daemon.
 
         This method or the synchronous version must be called before the
@@ -175,6 +179,7 @@ class MessageBus(BaseMessageBus):
             :class:`AuthError <dbus_ezy.AuthError>` on authorization errors.
         :type callback: :class:`Callable`
         """
+
         def authenticate_notify(exc):
             if exc is not None:
                 if connect_notify is not None:
@@ -202,11 +207,13 @@ class MessageBus(BaseMessageBus):
                 if connect_notify:
                     connect_notify(self, err)
 
-            hello_msg = Message(destination='org.freedesktop.DBus',
-                                path='/org/freedesktop/DBus',
-                                interface='org.freedesktop.DBus',
-                                member='Hello',
-                                serial=self.next_serial())
+            hello_msg = Message(
+                destination="org.freedesktop.DBus",
+                path="/org/freedesktop/DBus",
+                interface="org.freedesktop.DBus",
+                member="Hello",
+                serial=self.next_serial(),
+            )
 
             self._method_return_handlers[hello_msg.serial] = on_hello
             self._stream.write(hello_msg._marshall())
@@ -214,7 +221,7 @@ class MessageBus(BaseMessageBus):
 
         self._authenticate(authenticate_notify)
 
-    def connect_sync(self) -> 'MessageBus':
+    def connect_sync(self) -> "MessageBus":
         """Connect this message bus to the DBus daemon.
 
         This method or the asynchronous version must be called before the
@@ -250,9 +257,11 @@ class MessageBus(BaseMessageBus):
     def __exit__(self, exc_type, exc, tb):
         self.disconnect()
 
-    def call(self,
-             msg: Message,
-             reply_notify: Callable[[Optional[Message], Optional[Exception]], None] = None):
+    def call(
+        self,
+        msg: Message,
+        reply_notify: Callable[[Optional[Message], Optional[Exception]], None] = None,
+    ):
         """Send a method call and asynchronously wait for a reply from the DBus
         daemon.
 
@@ -281,7 +290,10 @@ class MessageBus(BaseMessageBus):
                   an error for the method call or returned an invalid result.
             - :class:`Exception` - If a connection error occurred.
         """
-        if msg.flags & MessageFlag.NO_REPLY_EXPECTED or msg.message_type is not MessageType.METHOD_CALL:
+        if (
+            msg.flags & MessageFlag.NO_REPLY_EXPECTED
+            or msg.message_type is not MessageType.METHOD_CALL
+        ):
             self.send(msg)
             return None
 
@@ -450,12 +462,12 @@ class MessageBus(BaseMessageBus):
             self.writable_source.add_unix_fd(self._fd, GLib.IO_OUT)
 
     def _authenticate(self, authenticate_notify):
-        self._stream.write(b'\0')
+        self._stream.write(b"\0")
         first_line = self._auth._authentication_start()
         if first_line is not None:
             if type(first_line) is not str:
-                raise AuthError('authenticator gave response not type str')
-            self._stream.write(f'{first_line}\r\n'.encode())
+                raise AuthError("authenticator gave response not type str")
+            self._stream.write(f"{first_line}\r\n".encode())
             self._stream.flush()
 
         def line_notify(line):
@@ -463,7 +475,7 @@ class MessageBus(BaseMessageBus):
                 resp = self._auth._receive_line(line)
                 self._stream.write(Authenticator._format_line(resp))
                 self._stream.flush()
-                if resp == 'BEGIN':
+                if resp == "BEGIN":
                     self._readline_source.destroy()
                     authenticate_notify(None)
                     return True

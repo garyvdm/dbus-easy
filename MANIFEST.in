@@ -1,2 +1,2 @@
-include README.md LICENSE CHANGELOG.md requirements-dev.txt .flake8 .style.yapf Dockerfile dbus_ezy/py.typed
+include README.md LICENSE CHANGELOG.md requirements-dev.txt Dockerfile dbus_ezy/py.typed
 recursive-include test *.py

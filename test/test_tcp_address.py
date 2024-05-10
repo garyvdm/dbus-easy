@@ -10,15 +10,15 @@ import os
 @pytest.mark.asyncio
 async def test_tcp_connection_with_forwarding():
     closables = []
-    host = '127.0.0.1'
-    port = '55556'
+    host = "127.0.0.1"
+    port = "55556"
 
-    addr_info = parse_address(os.environ.get('DBUS_SESSION_BUS_ADDRESS'))
+    addr_info = parse_address(os.environ.get("DBUS_SESSION_BUS_ADDRESS"))
     assert addr_info
-    if 'abstract' in addr_info[0][1]:
+    if "abstract" in addr_info[0][1]:
         path = f'\0{addr_info[0][1]["abstract"]}'
-    elif 'path' in addr_info[0][1]:
-        path = addr_info[0][1]['path']
+    elif "path" in addr_info[0][1]:
+        path = addr_info[0][1]["path"]
 
     assert path
 
@@ -47,19 +47,22 @@ async def test_tcp_connection_with_forwarding():
     server = await asyncio.start_server(handle_connection, host, port)
     closables.append(server)
 
-    bus = await MessageBus(bus_address=f'tcp:host={host},port={port}').connect()
+    bus = await MessageBus(bus_address=f"tcp:host={host},port={port}").connect()
 
     # basic tests to see if it works
     result = await bus.call(
-        Message(destination='org.freedesktop.DBus',
-                path='/org/freedesktop/DBus',
-                interface='org.freedesktop.DBus.Peer',
-                member='Ping'))
+        Message(
+            destination="org.freedesktop.DBus",
+            path="/org/freedesktop/DBus",
+            interface="org.freedesktop.DBus.Peer",
+            member="Ping",
+        )
+    )
     assert result
 
-    intr = await bus.introspect('org.freedesktop.DBus', '/org/freedesktop/DBus')
-    obj = bus.get_proxy_object('org.freedesktop.DBus', '/org/freedesktop/DBus', intr)
-    iface = obj.get_interface('org.freedesktop.DBus.Peer')
+    intr = await bus.introspect("org.freedesktop.DBus", "/org/freedesktop/DBus")
+    obj = bus.get_proxy_object("org.freedesktop.DBus", "/org/freedesktop/DBus", intr)
+    iface = obj.get_interface("org.freedesktop.DBus.Peer")
     await iface.call_ping()
 
     assert bus._sock.getpeername()[0] == host

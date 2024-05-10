@@ -48,8 +48,15 @@ HEADER_ERROR_NAME = HeaderField.ERROR_NAME.name
 HEADER_REPLY_SERIAL = HeaderField.REPLY_SERIAL.name
 HEADER_SENDER = HeaderField.SENDER.name
 
-READER_TYPE = Dict[str, Tuple[Optional[Callable[["Unmarshaller", SignatureType], Any]],
-                              Optional[str], Optional[int], Optional[Struct], ], ]
+READER_TYPE = Dict[
+    str,
+    Tuple[
+        Optional[Callable[["Unmarshaller", SignatureType], Any]],
+        Optional[str],
+        Optional[int],
+        Optional[Struct],
+    ],
+]
 
 
 class MarshallerStreamEndError(Exception):
@@ -81,7 +88,6 @@ class MarshallerStreamEndError(Exception):
 #
 #
 class Unmarshaller:
-
     buf: bytearray
     view: memoryview
     message: Message
@@ -111,14 +117,15 @@ class Unmarshaller:
 
         try:
             msg, ancdata, *_ = self.sock.recvmsg(
-                length, socket.CMSG_LEN(MAX_UNIX_FDS * unix_fd_list.itemsize))
+                length, socket.CMSG_LEN(MAX_UNIX_FDS * unix_fd_list.itemsize)
+            )
         except BlockingIOError:
             raise MarshallerStreamEndError()
 
         for level, type_, data in ancdata:
             if not (level == socket.SOL_SOCKET and type_ == socket.SCM_RIGHTS):
                 continue
-            unix_fd_list.frombytes(data[:len(data) - (len(data) % unix_fd_list.itemsize)])
+            unix_fd_list.frombytes(data[: len(data) - (len(data) % unix_fd_list.itemsize)])
             self.unix_fds.extend(list(unix_fd_list))
 
         return msg
@@ -158,14 +165,14 @@ class Unmarshaller:
         str_start = self.offset
         # read terminating '\0' byte as well (str_length + 1)
         self.offset += str_length + 1
-        return self.buf[str_start:str_start + str_length].decode()
+        return self.buf[str_start : str_start + str_length].decode()
 
     def read_signature(self, _=None):
         signature_len = self.view[self.offset]  # byte
         o = self.offset + 1
         # read terminating '\0' byte as well (str_length + 1)
         self.offset = o + signature_len + 1
-        return self.buf[o:o + signature_len].decode()
+        return self.buf[o : o + signature_len].decode()
 
     def read_variant(self, _=None):
         tree = SignatureTree._get(self.read_signature())
@@ -191,7 +198,7 @@ class Unmarshaller:
 
         if child_type.token == "y":
             self.offset += array_length
-            return self.buf[self.offset - array_length:self.offset]
+            return self.buf[self.offset - array_length : self.offset]
 
         beginning_offset = self.offset
 
@@ -215,7 +222,7 @@ class Unmarshaller:
             return reader(self, type_)
         self.offset += size + (-self.offset & (size - 1))  # align
         if self.can_cast:
-            return self.view[self.offset - size:self.offset].cast(ctype)[0]
+            return self.view[self.offset - size : self.offset].cast(ctype)[0]
         return struct.unpack_from(self.view, self.offset - size)[0]
 
     def header_fields(self, header_length):
@@ -231,7 +238,7 @@ class Unmarshaller:
             signature_len = self.view[self.offset]  # byte
             o = self.offset + 1
             self.offset += signature_len + 2  # one for the byte, one for the '\0'
-            tree = SignatureTree._get(self.buf[o:o + signature_len].decode())
+            tree = SignatureTree._get(self.buf[o : o + signature_len].decode())
             headers[HeaderField(field_0).name] = self.read_argument(tree.types[0])
         return headers
 
@@ -248,12 +255,13 @@ class Unmarshaller:
 
         if endian != LITTLE_ENDIAN and endian != BIG_ENDIAN:
             raise InvalidMessageError(
-                f"Expecting endianness as the first byte, got {endian} from {buffer}")
+                f"Expecting endianness as the first byte, got {endian} from {buffer}"
+            )
         if protocol_version != PROTOCOL_VERSION:
             raise InvalidMessageError(f"got unknown protocol version: {protocol_version}")
 
         self.body_len, self.serial, self.header_len = UNPACK_LENGTHS[endian].unpack_from(buffer, 4)
-        self.msg_len = (self.header_len + (-self.header_len & 7) + self.body_len)  # align 8
+        self.msg_len = self.header_len + (-self.header_len & 7) + self.body_len  # align 8
         if IS_BIG_ENDIAN and endian == BIG_ENDIAN:
             self.can_cast = True
         elif IS_LITTLE_ENDIAN and endian == LITTLE_ENDIAN:
@@ -299,17 +307,18 @@ class Unmarshaller:
             return None
         return self.message
 
-    _complex_parsers: Dict[str, Tuple[Callable[["Unmarshaller", SignatureType], Any], None, None,
-                                      None]] = {
-                                          "b": (read_boolean, None, None, None),
-                                          "o": (read_string, None, None, None),
-                                          "s": (read_string, None, None, None),
-                                          "g": (read_signature, None, None, None),
-                                          "a": (read_array, None, None, None),
-                                          "(": (read_struct, None, None, None),
-                                          "{": (read_dict_entry, None, None, None),
-                                          "v": (read_variant, None, None, None),
-                                      }
+    _complex_parsers: Dict[
+        str, Tuple[Callable[["Unmarshaller", SignatureType], Any], None, None, None]
+    ] = {
+        "b": (read_boolean, None, None, None),
+        "o": (read_string, None, None, None),
+        "s": (read_string, None, None, None),
+        "g": (read_signature, None, None, None),
+        "a": (read_array, None, None, None),
+        "(": (read_struct, None, None, None),
+        "{": (read_dict_entry, None, None, None),
+        "v": (read_variant, None, None, None),
+    }
 
     _ctype_by_endian: Dict[int, Dict[str, Tuple[None, str, int, Struct]]] = {
         endian: {
@@ -324,12 +333,6 @@ class Unmarshaller:
     }
 
     _readers_by_type: Dict[int, READER_TYPE] = {
-        BIG_ENDIAN: {
-            **_ctype_by_endian[BIG_ENDIAN],
-            **_complex_parsers
-        },
-        LITTLE_ENDIAN: {
-            **_ctype_by_endian[LITTLE_ENDIAN],
-            **_complex_parsers
-        },
+        BIG_ENDIAN: {**_ctype_by_endian[BIG_ENDIAN], **_complex_parsers},
+        LITTLE_ENDIAN: {**_ctype_by_endian[LITTLE_ENDIAN], **_complex_parsers},
     }

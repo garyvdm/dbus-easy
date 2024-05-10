@@ -10,15 +10,15 @@ import pytest
 
 class ExampleInterface(ServiceInterface):
     def __init__(self):
-        super().__init__('test.interface')
+        super().__init__("test.interface")
 
     @signal()
-    def SomeSignal(self) -> 's':
-        return 'hello'
+    def SomeSignal(self) -> "s":
+        return "hello"
 
     @signal()
-    def SignalMultiple(self) -> 'ss':
-        return ['hello', 'world']
+    def SignalMultiple(self) -> "ss":
+        return ["hello", "world"]
 
 
 @pytest.mark.asyncio
@@ -26,24 +26,28 @@ async def test_signals():
     bus1 = await MessageBus().connect()
     bus2 = await MessageBus().connect()
 
-    bus_intr = await bus1.introspect('org.freedesktop.DBus', '/org/freedesktop/DBus')
-    bus_obj = bus1.get_proxy_object('org.freedesktop.DBus', '/org/freedesktop/DBus', bus_intr)
-    stats = bus_obj.get_interface('org.freedesktop.DBus.Debug.Stats')
+    bus_intr = await bus1.introspect("org.freedesktop.DBus", "/org/freedesktop/DBus")
+    bus_obj = bus1.get_proxy_object("org.freedesktop.DBus", "/org/freedesktop/DBus", bus_intr)
+    stats = bus_obj.get_interface("org.freedesktop.DBus.Debug.Stats")
 
-    await bus1.request_name('test.signals.name')
+    await bus1.request_name("test.signals.name")
     service_interface = ExampleInterface()
-    bus1.export('/test/path', service_interface)
+    bus1.export("/test/path", service_interface)
 
-    obj = bus2.get_proxy_object('test.signals.name', '/test/path',
-                                bus1._introspect_export_path('/test/path'))
+    obj = bus2.get_proxy_object(
+        "test.signals.name", "/test/path", bus1._introspect_export_path("/test/path")
+    )
     interface = obj.get_interface(service_interface.name)
 
     async def ping():
         await bus2.call(
-            Message(destination=bus1.unique_name,
-                    interface='org.freedesktop.DBus.Peer',
-                    path='/test/path',
-                    member='Ping'))
+            Message(
+                destination=bus1.unique_name,
+                interface="org.freedesktop.DBus.Peer",
+                path="/test/path",
+                member="Ping",
+            )
+        )
 
     err = None
 
@@ -53,7 +57,7 @@ async def test_signals():
         try:
             nonlocal single_counter
             nonlocal err
-            assert value == 'hello'
+            assert value == "hello"
             assert current_message.sender
             single_counter += 1
         except Exception as e:
@@ -65,8 +69,8 @@ async def test_signals():
         nonlocal multiple_counter
         nonlocal err
         try:
-            assert value1 == 'hello'
-            assert value2 == 'world'
+            assert value1 == "hello"
+            assert value2 == "world"
             assert current_message.sender
             multiple_counter += 1
         except Exception as e:
@@ -93,7 +97,10 @@ async def test_signals():
     bus_match_rules = match_rules[bus2.unique_name]
     # test the match rule and user handler has been added
     assert len(bus_match_rules) == 2
-    assert "type='signal',interface='test.interface',path='/test/path',sender='test.signals.name'" in bus_match_rules
+    assert (
+        "type='signal',interface='test.interface',path='/test/path',sender='test.signals.name'"
+        in bus_match_rules
+    )
     assert len(bus2._user_message_handlers) == 1
 
     service_interface.SomeSignal()
@@ -110,12 +117,13 @@ async def test_signals():
     # different name and connection will trigger the match rule of the first
     # (happens with mpris)
     bus3 = await MessageBus().connect()
-    await bus3.request_name('test.signals.name2')
+    await bus3.request_name("test.signals.name2")
     service_interface2 = ExampleInterface()
-    bus3.export('/test/path', service_interface2)
+    bus3.export("/test/path", service_interface2)
 
-    obj = bus2.get_proxy_object('test.signals.name2', '/test/path',
-                                bus3._introspect_export_path('/test/path'))
+    obj = bus2.get_proxy_object(
+        "test.signals.name2", "/test/path", bus3._introspect_export_path("/test/path")
+    )
     # we have to add a dummy handler to add the match rule
     iface2 = obj.get_interface(service_interface2.name)
 
@@ -140,7 +148,10 @@ async def test_signals():
     assert bus2.unique_name in match_rules
     bus_match_rules = match_rules[bus2.unique_name]
     assert len(bus_match_rules) == 1
-    assert "type='signal',interface='test.interface',path='/test/path',sender='test.signals.name'" not in bus_match_rules
+    assert (
+        "type='signal',interface='test.interface',path='/test/path',sender='test.signals.name'"
+        not in bus_match_rules
+    )
     assert len(bus2._user_message_handlers) == 0
 
     bus1.disconnect()
@@ -150,7 +161,7 @@ async def test_signals():
 
 @pytest.mark.asyncio
 async def test_signals_with_changing_owners():
-    well_known_name = 'test.signals.changing.name'
+    well_known_name = "test.signals.changing.name"
 
     bus1 = await MessageBus().connect()
     bus2 = await MessageBus().connect()
@@ -158,18 +169,21 @@ async def test_signals_with_changing_owners():
 
     async def ping():
         await bus1.call(
-            Message(destination=bus1.unique_name,
-                    interface='org.freedesktop.DBus.Peer',
-                    path='/test/path',
-                    member='Ping'))
+            Message(
+                destination=bus1.unique_name,
+                interface="org.freedesktop.DBus.Peer",
+                path="/test/path",
+                member="Ping",
+            )
+        )
 
     service_interface = ExampleInterface()
     introspection = Node.default()
     introspection.interfaces.append(service_interface.introspect())
 
     # get the interface before export
-    obj = bus1.get_proxy_object(well_known_name, '/test/path', introspection)
-    iface = obj.get_interface('test.interface')
+    obj = bus1.get_proxy_object(well_known_name, "/test/path", introspection)
+    iface = obj.get_interface("test.interface")
     counter = 0
 
     def handler(what):
@@ -180,7 +194,7 @@ async def test_signals_with_changing_owners():
     await ping()
 
     # now export and get the name
-    bus2.export('/test/path', service_interface)
+    bus2.export("/test/path", service_interface)
     result = await bus2.request_name(well_known_name)
     assert result is RequestNameReply.PRIMARY_OWNER
 
@@ -192,7 +206,7 @@ async def test_signals_with_changing_owners():
 
     # now queue up a transfer of the name
     service_interface2 = ExampleInterface()
-    bus3.export('/test/path', service_interface2)
+    bus3.export("/test/path", service_interface2)
     result = await bus3.request_name(well_known_name)
     assert result is RequestNameReply.IN_QUEUE
 

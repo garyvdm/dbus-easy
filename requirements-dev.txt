@@ -6,8 +6,7 @@ pytest
 pytest-asyncio
 pytest-timeout
 pytest-cov
-yapf
-flake8
+ruff
 sphinx
 sphinx-autobuild
 sphinxcontrib-asyncio

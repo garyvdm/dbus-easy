@@ -45,6 +45,31 @@ include = ["dbus-ezy"]
 
 [tool.setuptools_scm]
 
-
 [tool.pytest.ini_options]
 timeout = 5
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore = [
+    "E721", # Do not compare types, use `isinstance()`
+    "F722", # Syntax error in forward annotation
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test/*" = [
+    "F821", # Undefined name in annoatations.
+]
+"examples/*" = [
+    "F821", # Undefined name in annoatations.
+]
+"*/__init__.py" = [
+    "F401", # imported but unused
+]
+"test/util.py" = [
+    "F401", # imported but unused
+]
+"dbus_ezy/errors.py" = [
+    "E402", # Module level import not at top of file
+]

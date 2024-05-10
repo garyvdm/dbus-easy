@@ -2,7 +2,7 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
 from dbus_ezy import Message
 from dbus_ezy.glib import MessageBus
@@ -25,8 +25,9 @@ def reply_handler(reply, err):
 
 
 bus.call(
-    Message('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus', 'ListNames'),
-    reply_handler)
+    Message("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ListNames"),
+    reply_handler,
+)
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 main.run()

@@ -1,5 +1,6 @@
-from ..signature import SignatureTree
 from struct import pack
+
+from ..signature import SignatureTree
 
 
 class Marshaller:

@@ -1,10 +1,11 @@
-from typing import List
-from dbus_ezy import PropertyAccess, introspection as intr
-from dbus_ezy.service import method, signal, dbus_property, ServiceInterface
-
 from test.util import check_annotated, skip_reason_no_typing_annotated
+from typing import List
 
 import pytest
+
+from dbus_ezy import PropertyAccess
+from dbus_ezy import introspection as intr
+from dbus_ezy.service import ServiceInterface, dbus_property, method, signal
 
 has_annotated = check_annotated()
 

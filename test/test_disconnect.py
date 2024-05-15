@@ -1,10 +1,11 @@
-from asyncio import get_event_loop
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message
-
-import os
-import pytest
 import functools
+import os
+from asyncio import get_event_loop
+
+import pytest
+
+from dbus_ezy import Message
+from dbus_ezy.aio import MessageBus
 
 
 @pytest.mark.asyncio

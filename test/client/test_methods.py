@@ -1,11 +1,12 @@
-from dbus_ezy.message import MessageFlag
-from dbus_ezy.service import ServiceInterface, method
-import dbus_ezy.introspection as intr
-from dbus_ezy import aio, glib, DBusError
-from dbus_ezy.message_bus import current_message
 from test.util import check_gi_repository, skip_reason_no_gi
 
 import pytest
+
+import dbus_ezy.introspection as intr
+from dbus_ezy import DBusError, aio, glib
+from dbus_ezy.message import MessageFlag
+from dbus_ezy.message_bus import current_message
+from dbus_ezy.service import ServiceInterface, method
 
 has_gi = check_gi_repository()
 

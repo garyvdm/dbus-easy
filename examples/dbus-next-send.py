@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
+import asyncio
+import json
+from argparse import OPTIONAL, ArgumentParser
+
+from dbus_ezy import BusType, Message, MessageType, Variant
+from dbus_ezy.aio import MessageBus
 from dbus_ezy.validators import (
     is_bus_name_valid,
+    is_interface_name_valid,
     is_member_name_valid,
     is_object_path_valid,
-    is_interface_name_valid,
 )
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import MessageType, BusType, Message, Variant
-from argparse import ArgumentParser, OPTIONAL
-import json
-
-import asyncio
 
 parser = ArgumentParser()
 

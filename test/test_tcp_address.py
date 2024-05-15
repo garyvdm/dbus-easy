@@ -1,10 +1,11 @@
-from dbus_ezy.aio import MessageBus
+import asyncio
+import os
+
+import pytest
+
 from dbus_ezy import Message
 from dbus_ezy._private.address import parse_address
-
-import asyncio
-import pytest
-import os
+from dbus_ezy.aio import MessageBus
 
 
 @pytest.mark.asyncio

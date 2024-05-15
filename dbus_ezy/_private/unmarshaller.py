@@ -1,20 +1,20 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from ..message import Message
-from .constants import (
-    HeaderField,
-    LITTLE_ENDIAN,
-    BIG_ENDIAN,
-    PROTOCOL_VERSION,
-)
-from ..constants import MessageType, MessageFlag
-from ..signature import SignatureTree, SignatureType, Variant
-from ..errors import InvalidMessageError
-
 import array
 import io
 import socket
 import sys
 from struct import Struct
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from ..constants import MessageFlag, MessageType
+from ..errors import InvalidMessageError
+from ..message import Message
+from ..signature import SignatureTree, SignatureType, Variant
+from .constants import (
+    BIG_ENDIAN,
+    LITTLE_ENDIAN,
+    PROTOCOL_VERSION,
+    HeaderField,
+)
 
 MAX_UNIX_FDS = 16
 

@@ -1,11 +1,12 @@
 import re
+from functools import lru_cache
+
 from .errors import (
     InvalidBusNameError,
-    InvalidObjectPathError,
     InvalidInterfaceNameError,
     InvalidMemberNameError,
+    InvalidObjectPathError,
 )
-from functools import lru_cache
 
 _bus_name_re = re.compile(r"^[A-Za-z_-][A-Za-z0-9_-]*$")
 _path_re = re.compile(r"^[A-Za-z0-9_]+$")

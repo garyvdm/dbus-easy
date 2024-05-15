@@ -1,8 +1,9 @@
-from dbus_ezy.service import ServiceInterface, method
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType, introspection as intr
-
 import pytest
+
+from dbus_ezy import Message, MessageType
+from dbus_ezy import introspection as intr
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.service import ServiceInterface, method
 
 standard_interfaces_count = len(intr.Node.default().interfaces)
 

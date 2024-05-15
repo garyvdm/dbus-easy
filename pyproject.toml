@@ -56,6 +56,7 @@ ignore = [
     "E721", # Do not compare types, use `isinstance()`
     "F722", # Syntax error in forward annotation
 ]
+extend-select = ["I"]
 
 [tool.ruff.lint.per-file-ignores]
 "test/*" = [

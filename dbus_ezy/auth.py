@@ -1,6 +1,7 @@
-from .errors import AuthError
 import enum
 import os
+
+from .errors import AuthError
 
 # The auth interface here is unstable. I would like to eventually open this up
 # for people to define their own custom authentication protocols, but I'm not

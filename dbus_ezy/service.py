@@ -1,19 +1,19 @@
-from .constants import PropertyAccess
-from .signature import SignatureTree, SignatureBodyMismatchError, Variant
+import asyncio
+import copy
+import inspect
+from functools import wraps
+from typing import Any, Dict, List, no_type_check_decorator
+
 from . import introspection as intr
-from .errors import SignalDisabledError
 from ._private.util import (
-    signature_contains_type,
+    parse_annotation,
     replace_fds_with_idx,
     replace_idx_with_fds,
-    parse_annotation,
+    signature_contains_type,
 )
-
-from functools import wraps
-import inspect
-from typing import no_type_check_decorator, Dict, List, Any
-import copy
-import asyncio
+from .constants import PropertyAccess
+from .errors import SignalDisabledError
+from .signature import SignatureBodyMismatchError, SignatureTree, Variant
 
 
 class _Method:

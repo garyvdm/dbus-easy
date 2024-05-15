@@ -1,14 +1,14 @@
-from ..proxy_object import BaseProxyObject, BaseProxyInterface
-from ..message_bus import BaseMessageBus
-from ..message import Message, MessageFlag
-from ..signature import Variant
-from ..errors import DBusError
-from ..constants import ErrorType
-from .._private.util import replace_idx_with_fds, replace_fds_with_idx
-from .. import introspection as intr
 import xml.etree.ElementTree as ET
+from typing import List, Union
 
-from typing import Union, List
+from .. import introspection as intr
+from .._private.util import replace_fds_with_idx, replace_idx_with_fds
+from ..constants import ErrorType
+from ..errors import DBusError
+from ..message import Message, MessageFlag
+from ..message_bus import BaseMessageBus
+from ..proxy_object import BaseProxyInterface, BaseProxyObject
+from ..signature import Variant
 
 
 class ProxyInterface(BaseProxyInterface):

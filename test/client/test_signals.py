@@ -1,11 +1,11 @@
-from dbus_ezy.service import ServiceInterface, signal
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message
-from dbus_ezy.introspection import Node
-from dbus_ezy.constants import RequestNameReply
-from dbus_ezy.message_bus import current_message
-
 import pytest
+
+from dbus_ezy import Message
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.constants import RequestNameReply
+from dbus_ezy.introspection import Node
+from dbus_ezy.message_bus import current_message
+from dbus_ezy.service import ServiceInterface, signal
 
 
 class ExampleInterface(ServiceInterface):

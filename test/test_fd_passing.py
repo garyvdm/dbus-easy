@@ -1,13 +1,14 @@
 """This tests the ability to send and receive file descriptors in dbus messages"""
 
-from asyncio import get_event_loop
-from dbus_ezy.service import ServiceInterface, method, signal, dbus_property
-from dbus_ezy.signature import SignatureTree, Variant
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType
 import os
+from asyncio import get_event_loop
 
 import pytest
+
+from dbus_ezy import Message, MessageType
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.service import ServiceInterface, dbus_property, method, signal
+from dbus_ezy.signature import SignatureTree, Variant
 
 
 def open_file():

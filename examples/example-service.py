@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
-from dbus_ezy.service import ServiceInterface, method, signal, dbus_property
-from dbus_ezy.aio.message_bus import MessageBus
-from dbus_ezy import Variant
-
 import asyncio
+
+from dbus_ezy import Variant
+from dbus_ezy.aio.message_bus import MessageBus
+from dbus_ezy.service import ServiceInterface, dbus_property, method, signal
 
 
 class ExampleInterface(ServiceInterface):

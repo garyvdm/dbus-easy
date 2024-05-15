@@ -8,14 +8,14 @@
 # be a further problem. More information here:
 # https://dbus.freedesktop.org/doc/dbus-specification.html#auth-mechanisms
 
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
-from dbus_ezy.aio import MessageBus
-
 import asyncio
+
+from dbus_ezy.aio import MessageBus
 
 loop = asyncio.get_event_loop()
 

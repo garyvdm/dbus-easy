@@ -50,9 +50,9 @@ class InvalidMemberNameError(TypeError):
         super().__init__(f"invalid member name: {member}")
 
 
+from .constants import ErrorType, MessageType
 from .message import Message
 from .validators import assert_interface_name_valid
-from .constants import ErrorType, MessageType
 
 
 class DBusError(Exception):

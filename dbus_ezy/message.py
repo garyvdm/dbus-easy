@@ -1,16 +1,16 @@
+from typing import Any, List
+
+from ._private.constants import LITTLE_ENDIAN, PROTOCOL_VERSION, HeaderField
 from ._private.marshaller import Marshaller
-from .constants import MessageType, MessageFlag, ErrorType
-from ._private.constants import PROTOCOL_VERSION, HeaderField, LITTLE_ENDIAN
-from .validators import (
-    assert_bus_name_valid,
-    assert_member_name_valid,
-    assert_object_path_valid,
-    assert_interface_name_valid,
-)
+from .constants import ErrorType, MessageFlag, MessageType
 from .errors import InvalidMessageError
 from .signature import SignatureTree, Variant
-
-from typing import List, Any
+from .validators import (
+    assert_bus_name_valid,
+    assert_interface_name_valid,
+    assert_member_name_valid,
+    assert_object_path_valid,
+)
 
 REQUIRED_FIELDS = {
     MessageType.METHOD_CALL: ("path", "member"),

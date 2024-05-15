@@ -1,28 +1,28 @@
-from ..message_bus import BaseMessageBus
-from .._private.unmarshaller import Unmarshaller
-from ..message import Message
-from ..constants import (
-    BusType,
-    NameFlag,
-    RequestNameReply,
-    ReleaseNameReply,
-    MessageType,
-    MessageFlag,
-)
-from ..service import ServiceInterface
-from ..errors import AuthError
-from .proxy_object import ProxyObject
-from .. import introspection as intr
-from ..auth import Authenticator, AuthExternal
-
-import logging
 import array
 import asyncio
-from asyncio import Queue
+import errno
+import logging
 import socket
+from asyncio import Queue
 from copy import copy
 from typing import Optional
-import errno
+
+from .. import introspection as intr
+from .._private.unmarshaller import Unmarshaller
+from ..auth import Authenticator, AuthExternal
+from ..constants import (
+    BusType,
+    MessageFlag,
+    MessageType,
+    NameFlag,
+    ReleaseNameReply,
+    RequestNameReply,
+)
+from ..errors import AuthError
+from ..message import Message
+from ..message_bus import BaseMessageBus
+from ..service import ServiceInterface
+from .proxy_object import ProxyObject
 
 
 def _future_set_exception(fut, exc):

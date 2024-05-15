@@ -1,8 +1,8 @@
-from .validators import is_object_path_valid
-from .errors import InvalidSignatureError, SignatureBodyMismatchError
-
 from functools import lru_cache
 from typing import Any, List, Mapping, Sequence, Union
+
+from .errors import InvalidSignatureError, SignatureBodyMismatchError
+from .validators import is_object_path_valid
 
 
 class SignatureType:

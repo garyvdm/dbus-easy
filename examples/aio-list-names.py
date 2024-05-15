@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
-from dbus_ezy import Message, MessageType
-from dbus_ezy.aio import MessageBus
-
 import asyncio
 import json
+
+from dbus_ezy import Message, MessageType
+from dbus_ezy.aio import MessageBus
 
 loop = asyncio.get_event_loop()
 

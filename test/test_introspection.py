@@ -1,6 +1,7 @@
-from dbus_ezy import introspection as intr, ArgDirection, PropertyAccess, SignatureType
-
 import os
+
+from dbus_ezy import ArgDirection, PropertyAccess, SignatureType
+from dbus_ezy import introspection as intr
 
 example_data = open(f"{os.path.dirname(__file__)}/data/introspection.xml", "r").read()
 

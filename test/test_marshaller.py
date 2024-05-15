@@ -1,12 +1,12 @@
-from typing import Any, Dict
-from dbus_ezy._private.unmarshaller import Unmarshaller
-from dbus_ezy import Message, Variant, SignatureTree, MessageType, MessageFlag
-
+import io
 import json
 import os
-import io
+from typing import Any, Dict
 
 import pytest
+
+from dbus_ezy import Message, MessageFlag, MessageType, SignatureTree, Variant
+from dbus_ezy._private.unmarshaller import Unmarshaller
 
 
 def print_buf(buf):

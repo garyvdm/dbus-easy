@@ -1,10 +1,11 @@
-from dbus_ezy.service import ServiceInterface, dbus_property, PropertyAccess
-from dbus_ezy.signature import Variant
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType, introspection as intr
-from dbus_ezy.constants import ErrorType
-
 import pytest
+
+from dbus_ezy import Message, MessageType
+from dbus_ezy import introspection as intr
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.constants import ErrorType
+from dbus_ezy.service import PropertyAccess, ServiceInterface, dbus_property
+from dbus_ezy.signature import Variant
 
 standard_interfaces_count = len(intr.Node.default().interfaces)
 

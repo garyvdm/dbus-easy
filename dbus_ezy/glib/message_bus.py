@@ -1,15 +1,21 @@
-from .._private.unmarshaller import Unmarshaller
-from ..constants import BusType
-from ..message import Message
-from ..constants import MessageType, MessageFlag, NameFlag, RequestNameReply, ReleaseNameReply
-from ..message_bus import BaseMessageBus
-from ..errors import AuthError
-from .proxy_object import ProxyObject
-from .. import introspection as intr
-from ..auth import Authenticator, AuthExternal
-
 import io
 from typing import Callable, Optional
+
+from .. import introspection as intr
+from .._private.unmarshaller import Unmarshaller
+from ..auth import Authenticator, AuthExternal
+from ..constants import (
+    BusType,
+    MessageFlag,
+    MessageType,
+    NameFlag,
+    ReleaseNameReply,
+    RequestNameReply,
+)
+from ..errors import AuthError
+from ..message import Message
+from ..message_bus import BaseMessageBus
+from .proxy_object import ProxyObject
 
 # glib is optional
 _import_error = None

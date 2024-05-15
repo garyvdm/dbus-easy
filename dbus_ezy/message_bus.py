@@ -1,30 +1,30 @@
-from ._private.address import get_bus_address, parse_address
-from ._private.util import replace_fds_with_idx, replace_idx_with_fds
-from .message import Message
-from .constants import (
-    BusType,
-    MessageFlag,
-    MessageType,
-    ErrorType,
-    NameFlag,
-    RequestNameReply,
-    ReleaseNameReply,
-)
-from .service import ServiceInterface
-from .validators import assert_object_path_valid, assert_bus_name_valid
-from .errors import DBusError, InvalidAddressError
-from .signature import Variant
-from .proxy_object import BaseProxyObject
-from . import introspection as intr
-
+import asyncio
 import contextvars
 import inspect
-import socket
 import logging
-import xml.etree.ElementTree as ET
+import socket
 import traceback
-import asyncio
-from typing import Type, Callable, Optional, Union, Coroutine, Any
+import xml.etree.ElementTree as ET
+from typing import Any, Callable, Coroutine, Optional, Type, Union
+
+from . import introspection as intr
+from ._private.address import get_bus_address, parse_address
+from ._private.util import replace_fds_with_idx, replace_idx_with_fds
+from .constants import (
+    BusType,
+    ErrorType,
+    MessageFlag,
+    MessageType,
+    NameFlag,
+    ReleaseNameReply,
+    RequestNameReply,
+)
+from .errors import DBusError, InvalidAddressError
+from .message import Message
+from .proxy_object import BaseProxyObject
+from .service import ServiceInterface
+from .signature import Variant
+from .validators import assert_bus_name_valid, assert_object_path_valid
 
 
 class ReadOnlyContextProxy:

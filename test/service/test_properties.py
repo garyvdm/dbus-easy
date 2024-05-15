@@ -1,9 +1,10 @@
-from dbus_ezy.service import ServiceInterface, dbus_property, method
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType, PropertyAccess, ErrorType, Variant, DBusError
+import asyncio
 
 import pytest
-import asyncio
+
+from dbus_ezy import DBusError, ErrorType, Message, MessageType, PropertyAccess, Variant
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.service import ServiceInterface, dbus_property, method
 
 
 class ExampleInterface(ServiceInterface):

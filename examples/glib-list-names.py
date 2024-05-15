@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import sys
 import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 
-from dbus_ezy import Message
-from dbus_ezy.glib import MessageBus
-
 import json
 import signal
+
 from gi.repository import GLib
+
+from dbus_ezy import Message
+from dbus_ezy.glib import MessageBus
 
 main = GLib.MainLoop()
 bus = MessageBus().connect_sync()

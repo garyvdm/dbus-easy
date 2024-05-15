@@ -1,11 +1,12 @@
-from dbus_ezy.service import ServiceInterface, signal, SignalDisabledError, dbus_property
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType
-from dbus_ezy.constants import PropertyAccess
-from dbus_ezy.signature import Variant
+import asyncio
 
 import pytest
-import asyncio
+
+from dbus_ezy import Message, MessageType
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.constants import PropertyAccess
+from dbus_ezy.service import ServiceInterface, SignalDisabledError, dbus_property, signal
+from dbus_ezy.signature import Variant
 
 
 class ExampleInterface(ServiceInterface):

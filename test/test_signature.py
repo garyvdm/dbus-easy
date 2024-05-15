@@ -1,7 +1,7 @@
-from dbus_ezy import SignatureTree, SignatureBodyMismatchError, Variant
-from dbus_ezy._private.util import signature_contains_type
-
 import pytest
+
+from dbus_ezy import SignatureBodyMismatchError, SignatureTree, Variant
+from dbus_ezy._private.util import signature_contains_type
 
 
 def assert_simple_type(signature, type_):

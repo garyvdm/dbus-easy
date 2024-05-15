@@ -1,8 +1,8 @@
-from dbus_ezy.service import ServiceInterface, method
-from dbus_ezy.aio import MessageBus
-from dbus_ezy import Message, MessageType, ErrorType, Variant, SignatureTree, DBusError, MessageFlag
-
 import pytest
+
+from dbus_ezy import DBusError, ErrorType, Message, MessageFlag, MessageType, SignatureTree, Variant
+from dbus_ezy.aio import MessageBus
+from dbus_ezy.service import ServiceInterface, method
 
 
 class ExampleInterface(ServiceInterface):

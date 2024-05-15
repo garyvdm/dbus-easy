@@ -1,7 +1,8 @@
-from typing import List, Any, Union
-import inspect
-from ..signature import SignatureTree, Variant
 import ast
+import inspect
+from typing import Any, List, Union
+
+from ..signature import SignatureTree, Variant
 
 
 def signature_contains_type(

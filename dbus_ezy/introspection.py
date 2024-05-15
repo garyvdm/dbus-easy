@@ -1,11 +1,10 @@
-from .constants import PropertyAccess, ArgDirection
-from .signature import SignatureTree, SignatureType
-from .validators import assert_member_name_valid, assert_interface_name_valid
-from .errors import InvalidIntrospectionError
-
+import xml.etree.ElementTree as ET
 from typing import List, Union
 
-import xml.etree.ElementTree as ET
+from .constants import ArgDirection, PropertyAccess
+from .errors import InvalidIntrospectionError
+from .signature import SignatureTree, SignatureType
+from .validators import assert_interface_name_valid, assert_member_name_valid
 
 # https://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format
 # TODO annotations

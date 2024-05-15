@@ -1,8 +1,9 @@
-from dbus_ezy import aio, glib, Message, DBusError
-from dbus_ezy.service import ServiceInterface, dbus_property, PropertyAccess
 from test.util import check_gi_repository, skip_reason_no_gi
 
 import pytest
+
+from dbus_ezy import DBusError, Message, aio, glib
+from dbus_ezy.service import PropertyAccess, ServiceInterface, dbus_property
 
 has_gi = check_gi_repository()
 

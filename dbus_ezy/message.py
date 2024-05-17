@@ -1,3 +1,4 @@
+import dataclasses
 from typing import Any, List
 
 from ._private.constants import LITTLE_ENDIAN, PROTOCOL_VERSION, HeaderField
@@ -20,6 +21,7 @@ REQUIRED_FIELDS = {
 }
 
 
+@dataclasses.dataclass
 class Message:
     """A class for sending and receiving messages through the
     :class:`MessageBus <dbus_ezy.message_bus.BaseMessageBus>` with the
@@ -67,38 +69,36 @@ class Message:
         - :class:`InvalidInterfaceNameError` - If ``error_name`` or ``interface`` is not a valid interface name.
     """
 
-    def __init__(
-        self,
-        destination: str = None,
-        path: str = None,
-        interface: str = None,
-        member: str = None,
-        message_type: MessageType = MessageType.METHOD_CALL,
-        flags: MessageFlag = MessageFlag.NONE,
-        error_name: str = None,
-        reply_serial: int = None,
-        sender: str = None,
-        unix_fds: List[int] = [],
-        signature: str = "",
-        body: List[Any] = [],
-        serial: int = 0,
-    ):
-        self.destination = destination
-        self.path = path
-        self.interface = interface
-        self.member = member
-        self.message_type = message_type
-        self.flags = flags if type(flags) is MessageFlag else MessageFlag(bytes([flags]))
-        self.error_name = error_name if type(error_name) is not ErrorType else error_name.value
-        self.reply_serial = reply_serial
-        self.sender = sender
-        self.unix_fds = unix_fds
-        self.signature = signature.signature if type(signature) is SignatureTree else signature
-        self.signature_tree = (
-            signature if type(signature) is SignatureTree else SignatureTree._get(signature)
+    destination: str = None
+    path: str = None
+    interface: str = None
+    member: str = None
+    message_type: MessageType = MessageType.METHOD_CALL
+    flags: MessageFlag = MessageFlag.NONE
+    error_name: str = None
+    reply_serial: int = None
+    sender: str = None
+    unix_fds: List[int] = dataclasses.field(default_factory=list)
+    # TODO initializer should specify which of the below they are passing in.
+    signature: str = ""
+    signature_tree: SignatureTree = dataclasses.field(init=False)
+
+    body: List[Any] = dataclasses.field(default_factory=list)
+    serial: int = 0
+
+    def __post_init__(self):
+        self.flags = (
+            self.flags if type(self.flags) is MessageFlag else MessageFlag(bytes([self.flags]))
         )
-        self.body = body
-        self.serial = serial
+        self.error_name = (
+            self.error_name if type(self.error_name) is not ErrorType else self.error_name.value
+        )
+        self.signature = self.signature if type(self.signature) is SignatureTree else self.signature
+        self.signature_tree = (
+            self.signature
+            if type(self.signature) is SignatureTree
+            else SignatureTree._get(self.signature)
+        )
 
         if self.destination is not None:
             assert_bus_name_valid(self.destination)

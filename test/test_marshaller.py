@@ -1,7 +1,8 @@
 import io
 import json
 import os
-from typing import Any, Dict
+from dataclasses import dataclass
+from pprint import pprint
 
 import pytest
 
@@ -9,28 +10,40 @@ from dbus_ezy import Message, MessageFlag, MessageType, SignatureTree, Variant
 from dbus_ezy._private.unmarshaller import Unmarshaller
 
 
-def print_buf(buf):
-    i = 0
-    while True:
-        p = buf[i : i + 8]
-        if not p:
-            break
-        print(p)
-        i += 8
+def hexdump(buffer: bytes):
+    lines = []
+    for i in range(0, len(buffer), 16):
+        line_bytes = bytearray(buffer[i : i + 16])
+        line = "{:08x}  {:23}  {:23}  |{:16}|".format(
+            i,
+            " ".join(("{:02x}".format(x) for x in line_bytes[:8])),
+            " ".join(("{:02x}".format(x) for x in line_bytes[8:])),
+            "".join((chr(x) if 32 <= x < 127 else "." for x in line_bytes)),
+        )
+        lines.append(line)
+    return "\n".join(lines)
 
 
-# these messages have been verified with another library
-table = json.load(open(os.path.dirname(__file__) + "/data/messages.json"))
+@dataclass
+class MessageExample:
+    data: bytes
+    message: Message
 
+    @staticmethod
+    def from_json(item):
+        copy = dict(item["message"])
+        if "message_type" in copy:
+            copy["message_type"] = MessageType(copy["message_type"])
+        if "flags" in copy:
+            copy["flags"] = MessageFlag(copy["flags"])
 
-def json_to_message(message: Dict[str, Any]) -> Message:
-    copy = dict(message)
-    if "message_type" in copy:
-        copy["message_type"] = MessageType(copy["message_type"])
-    if "flags" in copy:
-        copy["flags"] = MessageFlag(copy["flags"])
+        message = Message(**copy)
+        body = []
+        for i, type_ in enumerate(message.signature_tree.types):
+            body.append(replace_variants(type_, message.body[i]))
+        message.body = body
 
-    return Message(**copy)
+        return MessageExample(bytes.fromhex(item["data"]), message)
 
 
 # variants are an object in the json
@@ -57,74 +70,45 @@ def replace_variants(type_, item):
     return item
 
 
-def json_dump(what):
-    def dumper(obj):
-        try:
-            return obj.toJSON()
-        except Exception:
-            return obj.__dict__
-
-    return json.dumps(what, default=dumper, indent=2)
+# these messages have been verified with another library
+messages = [
+    MessageExample.from_json(item)
+    for item in json.load(open(os.path.dirname(__file__) + "/data/messages.json"))
+]
 
 
-def test_marshalling_with_table():
-    for item in table:
-        message = json_to_message(item["message"])
+@pytest.mark.parametrize("item", messages)
+def test_marshall(item: MessageExample):
+    pprint(item.message)
+    print()
+    print("Expected:")
+    print(hexdump(item.data))
+    print()
 
-        body = []
-        for i, type_ in enumerate(message.signature_tree.types):
-            body.append(replace_variants(type_, message.body[i]))
-        message.body = body
+    buf = item.message._marshall()
 
-        buf = message._marshall()
-        data = bytes.fromhex(item["data"])
+    print("Marshaled:")
+    print(hexdump(bytes(buf)))
 
-        if buf != data:
-            print("message:")
-            print(json_dump(item["message"]))
-            print("")
-            print("mine:")
-            print_buf(bytes(buf))
-            print("")
-            print("theirs:")
-            print_buf(data)
-
-        assert buf == data
+    assert buf == item.data
 
 
-@pytest.mark.parametrize("unmarshall_table", (table,))
-def test_unmarshalling_with_table(unmarshall_table):
-    for item in unmarshall_table:
-        stream = io.BytesIO(bytes.fromhex(item["data"]))
-        unmarshaller = Unmarshaller(stream)
-        try:
-            unmarshaller.unmarshall()
-        except Exception as e:
-            print("message failed to unmarshall:")
-            print(json_dump(item["message"]))
-            raise e
+@pytest.mark.parametrize("item", messages)
+def test_unmarshall(item: MessageExample):
+    print(hexdump(item.data))
+    print()
+    print("Expected:")
+    pprint(item.message)
+    print()
 
-        message = json_to_message(item["message"])
+    stream = io.BytesIO(item.data)
+    unmarshaller = Unmarshaller(stream)
+    message = unmarshaller.unmarshall()
 
-        body = []
-        for i, type_ in enumerate(message.signature_tree.types):
-            body.append(replace_variants(type_, message.body[i]))
-        message.body = body
+    print("Unmarshalled:")
+    pprint(message)
 
-        for attr in [
-            "body",
-            "signature",
-            "message_type",
-            "destination",
-            "path",
-            "interface",
-            "member",
-            "flags",
-            "serial",
-        ]:
-            assert getattr(unmarshaller.message, attr) == getattr(
-                message, attr
-            ), f"attr doesnt match: {attr}"
+    assert message == item.message
 
 
 def test_unmarshall_can_resume():

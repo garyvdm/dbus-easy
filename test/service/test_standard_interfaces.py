@@ -1,3 +1,5 @@
+from contextlib import AsyncExitStack
+
 import pytest
 
 from dbus_ezy import Message, MessageType
@@ -37,78 +39,79 @@ class ExampleComplexInterface(ServiceInterface):
 
 @pytest.mark.asyncio
 async def test_introspectable_interface():
-    bus1 = await MessageBus().connect()
-    bus2 = await MessageBus().connect()
+    async with AsyncExitStack() as stack:
+        bus1 = await stack.enter_async_context(MessageBus())
+        bus2 = await stack.enter_async_context(MessageBus())
+        interface = ExampleInterface("test.interface")
+        interface2 = ExampleInterface("test.interface2")
 
-    interface = ExampleInterface("test.interface")
-    interface2 = ExampleInterface("test.interface2")
+        export_path = "/test/path"
+        bus1.export(export_path, interface)
+        bus1.export(export_path, interface2)
 
-    export_path = "/test/path"
-    bus1.export(export_path, interface)
-    bus1.export(export_path, interface2)
-
-    reply = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path=export_path,
-            interface="org.freedesktop.DBus.Introspectable",
-            member="Introspect",
+        reply = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path=export_path,
+                interface="org.freedesktop.DBus.Introspectable",
+                member="Introspect",
+            )
         )
-    )
 
-    assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
-    assert reply.signature == "s"
-    node = intr.Node.parse(reply.body[0])
-    assert len(node.interfaces) == standard_interfaces_count + 2
-    assert node.interfaces[-1].name == "test.interface2"
-    assert node.interfaces[-2].name == "test.interface"
-    assert not node.nodes
+        assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
+        assert reply.signature == "s"
+        node = intr.Node.parse(reply.body[0])
+        assert len(node.interfaces) == standard_interfaces_count + 2
+        assert node.interfaces[-1].name == "test.interface2"
+        assert node.interfaces[-2].name == "test.interface"
+        assert not node.nodes
 
-    # introspect works on every path
-    reply = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path="/path/doesnt/exist",
-            interface="org.freedesktop.DBus.Introspectable",
-            member="Introspect",
+        # introspect works on every path
+        reply = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path="/path/doesnt/exist",
+                interface="org.freedesktop.DBus.Introspectable",
+                member="Introspect",
+            )
         )
-    )
-    assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
-    assert reply.signature == "s"
-    node = intr.Node.parse(reply.body[0])
-    assert not node.interfaces
-    assert not node.nodes
+        assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
+        assert reply.signature == "s"
+        node = intr.Node.parse(reply.body[0])
+        assert not node.interfaces
+        assert not node.nodes
 
 
 @pytest.mark.asyncio
 async def test_peer_interface():
-    bus1 = await MessageBus().connect()
-    bus2 = await MessageBus().connect()
+    async with AsyncExitStack() as stack:
+        bus1 = await stack.enter_async_context(MessageBus())
+        bus2 = await stack.enter_async_context(MessageBus())
 
-    reply = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path="/path/doesnt/exist",
-            interface="org.freedesktop.DBus.Peer",
-            member="Ping",
+        reply = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path="/path/doesnt/exist",
+                interface="org.freedesktop.DBus.Peer",
+                member="Ping",
+            )
         )
-    )
 
-    assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
-    assert reply.signature == ""
+        assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
+        assert reply.signature == ""
 
-    reply = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path="/path/doesnt/exist",
-            interface="org.freedesktop.DBus.Peer",
-            member="GetMachineId",
-            signature="",
+        reply = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path="/path/doesnt/exist",
+                interface="org.freedesktop.DBus.Peer",
+                member="GetMachineId",
+                signature="",
+            )
         )
-    )
 
-    assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
-    assert reply.signature == "s"
+        assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
+        assert reply.signature == "s"
 
 
 @pytest.mark.asyncio
@@ -133,105 +136,108 @@ async def test_object_manager():
         }
     }
 
-    bus1 = await MessageBus().connect()
-    bus2 = await MessageBus().connect()
+    async with AsyncExitStack() as stack:
+        bus1 = await stack.enter_async_context(MessageBus())
+        bus2 = await stack.enter_async_context(MessageBus())
 
-    interface = ExampleInterface("test.interface1")
-    interface2 = ExampleComplexInterface("test.interface2")
+        interface = ExampleInterface("test.interface1")
+        interface2 = ExampleComplexInterface("test.interface2")
 
-    export_path = "/test/path"
-    bus1.export(export_path, interface)
-    bus1.export(export_path, interface2)
-    bus1.export(export_path + "/deeper", interface2)
+        export_path = "/test/path"
+        bus1.export(export_path, interface)
+        bus1.export(export_path, interface2)
+        bus1.export(export_path + "/deeper", interface2)
 
-    reply_root = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path="/",
-            interface="org.freedesktop.DBus.ObjectManager",
-            member="GetManagedObjects",
+        reply_root = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path="/",
+                interface="org.freedesktop.DBus.ObjectManager",
+                member="GetManagedObjects",
+            )
         )
-    )
 
-    reply_level1 = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path=export_path,
-            interface="org.freedesktop.DBus.ObjectManager",
-            member="GetManagedObjects",
+        reply_level1 = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path=export_path,
+                interface="org.freedesktop.DBus.ObjectManager",
+                member="GetManagedObjects",
+            )
         )
-    )
 
-    reply_level2 = await bus2.call(
-        Message(
-            destination=bus1.unique_name,
-            path=export_path + "/deeper",
-            interface="org.freedesktop.DBus.ObjectManager",
-            member="GetManagedObjects",
+        reply_level2 = await bus2.call(
+            Message(
+                destination=bus1.unique_name,
+                path=export_path + "/deeper",
+                interface="org.freedesktop.DBus.ObjectManager",
+                member="GetManagedObjects",
+            )
         )
-    )
 
-    assert reply_root.signature == "a{oa{sa{sv}}}"
-    assert reply_level1.signature == "a{oa{sa{sv}}}"
-    assert reply_level2.signature == "a{oa{sa{sv}}}"
+        assert reply_root.signature == "a{oa{sa{sv}}}"
+        assert reply_level1.signature == "a{oa{sa{sv}}}"
+        assert reply_level2.signature == "a{oa{sa{sv}}}"
 
-    assert reply_level2.body == [{}]
-    assert reply_level1.body == [expected_reply]
-    expected_reply.update(reply_ext)
-    assert reply_root.body == [expected_reply]
+        assert reply_level2.body == [{}]
+        assert reply_level1.body == [expected_reply]
+        expected_reply.update(reply_ext)
+        assert reply_root.body == [expected_reply]
 
 
 @pytest.mark.asyncio
 async def test_standard_interface_properties():
     # standard interfaces have no properties, but should still behave correctly
     # when you try to call the methods anyway (#49)
-    bus1 = await MessageBus().connect()
-    bus2 = await MessageBus().connect()
-    interface = ExampleInterface("test.interface1")
-    export_path = "/test/path"
-    bus1.export(export_path, interface)
+    async with AsyncExitStack() as stack:
+        bus1 = await stack.enter_async_context(MessageBus())
+        bus2 = await stack.enter_async_context(MessageBus())
 
-    for iface in [
-        "org.freedesktop.DBus.Properties",
-        "org.freedesktop.DBus.Introspectable",
-        "org.freedesktop.DBus.Peer",
-        "org.freedesktop.DBus.ObjectManager",
-    ]:
-        result = await bus2.call(
-            Message(
-                destination=bus1.unique_name,
-                path=export_path,
-                interface="org.freedesktop.DBus.Properties",
-                member="Get",
-                signature="ss",
-                body=[iface, "anything"],
-            )
-        )
-        assert result.message_type is MessageType.ERROR
-        assert result.error_name == ErrorType.UNKNOWN_PROPERTY.value
+        interface = ExampleInterface("test.interface1")
+        export_path = "/test/path"
+        bus1.export(export_path, interface)
 
-        result = await bus2.call(
-            Message(
-                destination=bus1.unique_name,
-                path=export_path,
-                interface="org.freedesktop.DBus.Properties",
-                member="Set",
-                signature="ssv",
-                body=[iface, "anything", Variant("s", "new thing")],
+        for iface in [
+            "org.freedesktop.DBus.Properties",
+            "org.freedesktop.DBus.Introspectable",
+            "org.freedesktop.DBus.Peer",
+            "org.freedesktop.DBus.ObjectManager",
+        ]:
+            result = await bus2.call(
+                Message(
+                    destination=bus1.unique_name,
+                    path=export_path,
+                    interface="org.freedesktop.DBus.Properties",
+                    member="Get",
+                    signature="ss",
+                    body=[iface, "anything"],
+                )
             )
-        )
-        assert result.message_type is MessageType.ERROR
-        assert result.error_name == ErrorType.UNKNOWN_PROPERTY.value
+            assert result.message_type is MessageType.ERROR
+            assert result.error_name == ErrorType.UNKNOWN_PROPERTY.value
 
-        result = await bus2.call(
-            Message(
-                destination=bus1.unique_name,
-                path=export_path,
-                interface="org.freedesktop.DBus.Properties",
-                member="GetAll",
-                signature="s",
-                body=[iface],
+            result = await bus2.call(
+                Message(
+                    destination=bus1.unique_name,
+                    path=export_path,
+                    interface="org.freedesktop.DBus.Properties",
+                    member="Set",
+                    signature="ssv",
+                    body=[iface, "anything", Variant("s", "new thing")],
+                )
             )
-        )
-        assert result.message_type is MessageType.METHOD_RETURN
-        assert result.body == [{}]
+            assert result.message_type is MessageType.ERROR
+            assert result.error_name == ErrorType.UNKNOWN_PROPERTY.value
+
+            result = await bus2.call(
+                Message(
+                    destination=bus1.unique_name,
+                    path=export_path,
+                    interface="org.freedesktop.DBus.Properties",
+                    member="GetAll",
+                    signature="s",
+                    body=[iface],
+                )
+            )
+            assert result.message_type is MessageType.METHOD_RETURN
+            assert result.body == [{}]

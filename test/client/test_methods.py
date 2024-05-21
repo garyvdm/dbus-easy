@@ -1,3 +1,4 @@
+from contextlib import AsyncExitStack
 from test.util import check_gi_repository, skip_reason_no_gi
 
 import pytest
@@ -48,57 +49,56 @@ class ExampleInterface(ServiceInterface):
 async def test_aio_proxy_object():
     bus_name = "aio.client.test.methods"
 
-    bus = await aio.MessageBus().connect()
-    bus2 = await aio.MessageBus().connect()
-    await bus.request_name(bus_name)
-    service_interface = ExampleInterface()
-    bus.export("/test/path", service_interface)
-    # add some more to test nodes
-    bus.export("/test/path/child1", ExampleInterface())
-    bus.export("/test/path/child2", ExampleInterface())
+    async with AsyncExitStack() as stack:
+        bus = await stack.enter_async_context(aio.MessageBus())
+        bus2 = await stack.enter_async_context(aio.MessageBus())
 
-    introspection = await bus2.introspect(bus_name, "/test/path")
-    assert type(introspection) is intr.Node
-    obj = bus2.get_proxy_object(bus_name, "/test/path", introspection)
-    interface = obj.get_interface(service_interface.name)
+        await bus.request_name(bus_name)
+        service_interface = ExampleInterface()
+        bus.export("/test/path", service_interface)
+        # add some more to test nodes
+        bus.export("/test/path/child1", ExampleInterface())
+        bus.export("/test/path/child2", ExampleInterface())
 
-    children = obj.get_children()
-    assert len(children) == 2
-    for child in obj.get_children():
-        assert type(child) is aio.ProxyObject
+        introspection = await bus2.introspect(bus_name, "/test/path")
+        assert type(introspection) is intr.Node
+        obj = bus2.get_proxy_object(bus_name, "/test/path", introspection)
+        interface = obj.get_interface(service_interface.name)
 
-    result = await interface.call_ping()
-    assert result is None
+        children = obj.get_children()
+        assert len(children) == 2
+        for child in obj.get_children():
+            assert type(child) is aio.ProxyObject
 
-    result = await interface.call_echo_string("hello")
-    assert result == "hello"
+        result = await interface.call_ping()
+        assert result is None
 
-    result = await interface.call_concat_strings("hello ", "world")
-    assert result == "hello world"
+        result = await interface.call_echo_string("hello")
+        assert result == "hello"
 
-    result = await interface.call_echo_three("hello", "there", "world")
-    assert result == ["hello", "there", "world"]
+        result = await interface.call_concat_strings("hello ", "world")
+        assert result == "hello world"
 
-    result = await interface.call_echo_int64(-10000)
-    assert result == -10000
+        result = await interface.call_echo_three("hello", "there", "world")
+        assert result == ["hello", "there", "world"]
 
-    result = await interface.call_echo_string("no reply", flags=MessageFlag.NO_REPLY_EXPECTED)
-    assert result is None
+        result = await interface.call_echo_int64(-10000)
+        assert result == -10000
 
-    result = await interface.call_uses_current_message()
-    assert result
+        result = await interface.call_echo_string("no reply", flags=MessageFlag.NO_REPLY_EXPECTED)
+        assert result is None
 
-    with pytest.raises(DBusError):
-        try:
-            await interface.call_throws_error()
-        except DBusError as e:
-            assert e.reply is not None
-            assert e.type == "test.error"
-            assert e.text == "something went wrong"
-            raise e
+        result = await interface.call_uses_current_message()
+        assert result
 
-    bus.disconnect()
-    bus2.disconnect()
+        with pytest.raises(DBusError):
+            try:
+                await interface.call_throws_error()
+            except DBusError as e:
+                assert e.reply is not None
+                assert e.type == "test.error"
+                assert e.text == "something went wrong"
+                raise e
 
 
 @pytest.mark.skipif(not has_gi, reason=skip_reason_no_gi)

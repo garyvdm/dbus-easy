@@ -2,9 +2,10 @@ from contextlib import AsyncExitStack
 
 import pytest
 
-from dbus_ezy import DBusError, ErrorType, Message, MessageFlag, MessageType, SignatureTree, Variant
+from dbus_ezy import DBusError, ErrorType, Message, MessageFlag, MessageType, Variant
 from dbus_ezy.aio import MessageBus
 from dbus_ezy.service import ServiceInterface, method
+from dbus_ezy.signature import parse_signature
 
 
 class ExampleInterface(ServiceInterface):
@@ -145,8 +146,8 @@ async def test_methods(interface_class):
             {"foo": Variant("t", 100)},
             ["one", ["two", [Variant("s", "three")]]],
         ]
-        signature = "asva{sv}(s(s(v)))"
-        SignatureTree(signature).verify(body)
+        signature = parse_signature("asva{sv}(s(s(v)))")
+        signature.verify(body)
         reply = await call("echo_containers", signature, body)
         assert reply.message_type == MessageType.METHOD_RETURN, reply.body[0]
         assert reply.signature == signature

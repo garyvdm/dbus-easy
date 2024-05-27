@@ -77,7 +77,7 @@ class ProxyInterface(BaseProxyInterface):
         async def method_fn(*args, flags=MessageFlag.NONE):
             input_body, unix_fds = replace_fds_with_idx(intr_method.in_signature, list(args))
 
-            msg = await self.bus.call(
+            msg: Message = await self.bus.call(
                 Message(
                     destination=self.bus_name,
                     path=self.path,
@@ -97,7 +97,7 @@ class ProxyInterface(BaseProxyInterface):
 
             out_len = len(intr_method.out_args)
 
-            body = replace_idx_with_fds(msg.signature_tree, msg.body, msg.unix_fds)
+            body = replace_idx_with_fds(msg.signature, msg.body, msg.unix_fds)
 
             if not out_len:
                 return None

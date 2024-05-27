@@ -1,11 +1,3 @@
-class SignatureBodyMismatchError(ValueError):
-    pass
-
-
-class InvalidSignatureError(ValueError):
-    pass
-
-
 class InvalidAddressError(ValueError):
     pass
 

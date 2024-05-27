@@ -6,8 +6,9 @@ from pprint import pprint
 
 import pytest
 
-from dbus_ezy import Message, MessageFlag, MessageType, SignatureTree, Variant
+from dbus_ezy import Message, MessageFlag, MessageType, Signature, Variant
 from dbus_ezy._private.unmarshaller import Unmarshaller
+from dbus_ezy.signature import parse_single_type
 
 
 def hexdump(buffer: bytes):
@@ -39,33 +40,33 @@ class MessageExample:
 
         message = Message(**copy)
         body = []
-        for i, type_ in enumerate(message.signature_tree.types):
-            body.append(replace_variants(type_, message.body[i]))
+        for i, child in enumerate(message.signature.children):
+            body.append(replace_variants(child, message.body[i]))
         message.body = body
 
         return MessageExample(bytes.fromhex(item["data"]), message)
 
 
 # variants are an object in the json
-def replace_variants(type_, item):
-    if type_.token == "v" and type(item) is not Variant:
+def replace_variants(signature: Signature, item):
+    if signature.type_code == "v" and type(item) is not Variant:
         item = Variant(
             item["signature"],
-            replace_variants(SignatureTree(item["signature"]).types[0], item["value"]),
+            replace_variants(parse_single_type(item["signature"]), item["value"]),
         )
-    elif type_.token == "a":
+    elif signature.type_code == "a":
         for i, item_child in enumerate(item):
-            if type_.children[0].token == "{":
+            if signature.children[0].type_code == "{":
                 for k, v in item.items():
-                    item[k] = replace_variants(type_.children[0].children[1], v)
+                    item[k] = replace_variants(signature.children[0].children[1], v)
             else:
-                item[i] = replace_variants(type_.children[0], item_child)
-    elif type_.token == "(":
+                item[i] = replace_variants(signature.children[0], item_child)
+    elif signature.type_code == "(":
         for i, item_child in enumerate(item):
-            if type_.children[0].token == "{":
+            if signature.children[0].type_code == "{":
                 assert False
             else:
-                item[i] = replace_variants(type_.children[i], item_child)
+                item[i] = replace_variants(signature.children[i], item_child)
 
     return item
 

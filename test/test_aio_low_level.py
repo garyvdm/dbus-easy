@@ -125,7 +125,7 @@ async def test_sending_signals_between_buses():
 
         await bus1.call(add_match_msg)
 
-        async def wait_for_message():
+        async def wait_for_message() -> Message:
             future = get_event_loop().create_future()
 
             def message_handler(signal):

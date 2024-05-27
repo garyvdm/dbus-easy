@@ -1,6 +1,6 @@
 import os
 
-from dbus_ezy import ArgDirection, PropertyAccess, SignatureType
+from dbus_ezy import ArgDirection, PropertyAccess, Signature
 from dbus_ezy import introspection as intr
 
 example_data = open(f"{os.path.dirname(__file__)}/data/introspection.xml", "r").read()
@@ -34,24 +34,18 @@ def test_example_introspection_from_xml():
     assert type(foo) is intr.Arg
     assert foo.name == "foo"
     assert foo.direction == ArgDirection.IN
-    assert foo.signature == "i"
-    assert type(foo.type) is SignatureType
-    assert foo.type.token == "i"
+    assert foo.signature == Signature(text="i", type_code="i")
 
     bar = frobate.out_args[0]
     assert type(bar) is intr.Arg
     assert bar.name == "bar"
     assert bar.direction == ArgDirection.OUT
-    assert bar.signature == "s"
-    assert type(bar.type) is SignatureType
-    assert bar.type.token == "s"
+    assert bar.signature == Signature(text="s", type_code="s")
 
     prop = interface.properties[0]
     assert type(prop) is intr.Property
     assert prop.name == "Bar"
-    assert prop.signature == "y"
-    assert type(prop.type) is SignatureType
-    assert prop.type.token == "y"
+    assert prop.signature == Signature(text="y", type_code="y")
     assert prop.access == PropertyAccess.WRITE
 
     changed = interface.signals[0]
@@ -61,7 +55,7 @@ def test_example_introspection_from_xml():
     new_value = changed.args[0]
     assert type(new_value) is intr.Arg
     assert new_value.name == "new_value"
-    assert new_value.signature == "b"
+    assert new_value.signature == Signature(text="b", type_code="b")
 
 
 def test_example_introspection_to_xml():

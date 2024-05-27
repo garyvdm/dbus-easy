@@ -3,7 +3,7 @@ from typing import List, Union
 
 from .constants import ArgDirection, PropertyAccess
 from .errors import InvalidIntrospectionError
-from .signature import SignatureTree, SignatureType
+from .signature import Signature, parse_signature, parse_single_type
 from .validators import assert_interface_name_valid, assert_member_name_valid
 
 # https://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format
@@ -30,26 +30,16 @@ class Arg:
 
     def __init__(
         self,
-        signature: Union[SignatureType, str],
+        signature: Union[Signature, str],
         direction: List[ArgDirection] = None,
         name: str = None,
     ):
         if name is not None:
             assert_member_name_valid(name)
 
-        type_ = None
-        if type(signature) is SignatureType:
-            type_ = signature
-            signature = signature.signature
-        else:
-            tree = SignatureTree._get(signature)
-            if len(tree.types) != 1:
-                raise InvalidIntrospectionError(
-                    f"an argument must have a single complete type. (has {len(tree.types)} types)"
-                )
-            type_ = tree.types[0]
+        if isinstance(signature, str):
+            signature = parse_single_type(signature)
 
-        self.type = type_
         self.signature = signature
         self.name = name
         self.direction = direction
@@ -74,7 +64,7 @@ class Arg:
         if not signature:
             raise InvalidIntrospectionError('a method argument must have a "type" attribute')
 
-        return Arg(signature, direction, name)
+        return Arg(parse_single_type(signature), direction, name)
 
     def to_xml(self) -> ET.Element:
         """Convert this :class:`Arg` into an :class:`xml.etree.ElementTree.Element`."""
@@ -84,7 +74,7 @@ class Arg:
 
         if self.direction:
             element.set("direction", self.direction.value)
-        element.set("type", self.signature)
+        element.set("type", self.signature.text)
 
         return element
 
@@ -109,7 +99,7 @@ class Signal:
 
         self.name = name
         self.args = args or []
-        self.signature = "".join(arg.signature for arg in self.args)
+        self.signature = parse_signature("".join(arg.signature.text for arg in self.args))
 
     def from_xml(element):
         """Convert an :class:`xml.etree.ElementTree.Element` to a :class:`Signal`.
@@ -172,8 +162,8 @@ class Method:
         self.name = name
         self.in_args = in_args
         self.out_args = out_args
-        self.in_signature = "".join(arg.signature for arg in in_args)
-        self.out_signature = "".join(arg.signature for arg in out_args)
+        self.in_signature = parse_signature("".join(arg.signature.text for arg in in_args))
+        self.out_signature = parse_signature("".join(arg.signature.text for arg in out_args))
 
     def from_xml(element: ET.Element) -> "Method":
         """Convert an :class:`xml.etree.ElementTree.Element` to a :class:`Method`.
@@ -239,18 +229,17 @@ class Property:
     """
 
     def __init__(
-        self, name: str, signature: str, access: PropertyAccess = PropertyAccess.READWRITE
+        self,
+        name: str,
+        signature: Union[Signature, str],
+        access: PropertyAccess = PropertyAccess.READWRITE,
     ):
-        tree = SignatureTree._get(signature)
-        if len(tree.types) != 1:
-            raise InvalidIntrospectionError(
-                f"properties must have a single complete type. (has {len(tree.types)} types)"
-            )
+        if isinstance(signature, str):
+            signature = parse_single_type(signature)
 
         self.name = name
         self.signature = signature
         self.access = access
-        self.type = tree.types[0]
 
     def from_xml(element):
         """Convert an :class:`xml.etree.ElementTree.Element` to a :class:`Property`.
@@ -272,13 +261,13 @@ class Property:
         if not signature:
             raise InvalidIntrospectionError('properties must have a "type" attribute')
 
-        return Property(name, signature, access)
+        return Property(name, parse_single_type(signature), access)
 
     def to_xml(self) -> ET.Element:
         """Convert this :class:`Property` into an :class:`xml.etree.ElementTree.Element`."""
         element = ET.Element("property")
         element.set("name", self.name)
-        element.set("type", self.signature)
+        element.set("type", self.signature.text)
         element.set("access", self.access.value)
         return element
 

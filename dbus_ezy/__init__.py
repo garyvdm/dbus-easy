@@ -21,12 +21,15 @@ from .errors import (
     InvalidMemberNameError,
     InvalidMessageError,
     InvalidObjectPathError,
-    InvalidSignatureError,
     SignalDisabledError,
-    SignatureBodyMismatchError,
 )
 from .message import Message
-from .signature import SignatureTree, SignatureType, Variant
+from .signature import (
+    InvalidSignatureError,
+    Signature,
+    SignatureBodyMismatchError,
+    Variant,
+)
 from .validators import (
     assert_bus_name_valid,
     assert_interface_name_valid,

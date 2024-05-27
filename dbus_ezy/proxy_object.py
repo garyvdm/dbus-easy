@@ -3,7 +3,9 @@ import inspect
 import logging
 import re
 import xml.etree.ElementTree as ET
-from typing import Coroutine, List, Type, Union
+from typing import Coroutine, List, Optional, Type, Union
+
+from dbus_ezy.signature import Signature
 
 from . import introspection as intr
 from . import message_bus
@@ -59,7 +61,7 @@ class BaseProxyInterface:
         return BaseProxyInterface._underscorer2.sub(r"\1_\2", subbed).lower()
 
     @staticmethod
-    def _check_method_return(msg, signature=None):
+    def _check_method_return(msg: Message, signature: Optional[Union[Signature, str]] = None):
         if msg.message_type == MessageType.ERROR:
             raise DBusError._from_message(msg)
         elif msg.message_type != MessageType.METHOD_RETURN:
@@ -67,7 +69,7 @@ class BaseProxyInterface:
         elif signature is not None and msg.signature != signature:
             raise DBusError(
                 ErrorType.CLIENT_ERROR,
-                f'method call returned unexpected signature: "{msg.signature}"',
+                f'method call returned unexpected signature: "{msg.signature!r}" expected: "{signature!r}"',
                 msg,
             )
 
@@ -77,7 +79,7 @@ class BaseProxyInterface:
     def _add_property(self, intr_property):
         raise NotImplementedError("this must be implemented in the inheriting class")
 
-    def _message_handler(self, msg):
+    def _message_handler(self, msg: Message):
         if (
             not msg._matches(
                 message_type=MessageType.SIGNAL, interface=self.introspection.name, path=self.path
@@ -99,8 +101,8 @@ class BaseProxyInterface:
         match = [s for s in self.introspection.signals if s.name == msg.member]
         if not len(match):
             return
-        intr_signal = match[0]
-        if intr_signal.signature != msg.signature:
+        intr_signal: intr.Signal = match[0]
+        if intr_signal.signature != msg.signature.text:
             logging.warning(
                 f'got signal "{self.introspection.name}.{msg.member}" with unexpected signature "{msg.signature}"'
             )

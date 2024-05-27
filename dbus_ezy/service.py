@@ -4,22 +4,29 @@ import inspect
 from functools import wraps
 from typing import Any, Dict, List, no_type_check_decorator
 
+from dbus_ezy.message import Message
+
 from . import introspection as intr
 from ._private.util import (
     parse_annotation,
     replace_fds_with_idx,
     replace_idx_with_fds,
-    signature_contains_type,
 )
 from .constants import PropertyAccess
 from .errors import SignalDisabledError
-from .signature import SignatureBodyMismatchError, SignatureTree, Variant
+from .signature import (
+    Signature,
+    SignatureBodyMismatchError,
+    Variant,
+    parse_signature,
+    parse_single_type,
+    signature_contains_type,
+)
 
 
 class _Method:
     def __init__(self, fn, name, disabled=False):
         in_signature = ""
-        out_signature = ""
 
         inspection = inspect.signature(fn)
 
@@ -39,8 +46,8 @@ class _Method:
         out_args = []
         out_signature = parse_annotation(inspection.return_annotation)
         if out_signature:
-            for type_ in SignatureTree._get(out_signature).types:
-                out_args.append(intr.Arg(type_, intr.ArgDirection.OUT))
+            for out_arg in parse_signature(out_signature).children:
+                out_args.append(intr.Arg(out_arg, intr.ArgDirection.OUT))
 
         self.name = name
         self.fn = fn
@@ -48,8 +55,8 @@ class _Method:
         self.introspection = intr.Method(name, in_args, out_args)
         self.in_signature = in_signature
         self.out_signature = out_signature
-        self.in_signature_tree = SignatureTree._get(in_signature)
-        self.out_signature_tree = SignatureTree._get(out_signature)
+        self.in_signature_tree = parse_signature(in_signature)
+        self.out_signature_tree = parse_signature(out_signature)
 
 
 def method(name: str = None, disabled: bool = False):
@@ -109,22 +116,18 @@ class _Signal:
         inspection = inspect.signature(fn)
 
         args = []
-        signature = ""
-        signature_tree = None
+        signature = None
 
         return_annotation = parse_annotation(inspection.return_annotation)
 
         if return_annotation:
-            signature = return_annotation
-            signature_tree = SignatureTree._get(signature)
-            for type_ in signature_tree.types:
-                args.append(intr.Arg(type_, intr.ArgDirection.OUT))
+            signature = parse_signature(return_annotation)
+            for child in signature.children:
+                args.append(intr.Arg(child, intr.ArgDirection.OUT))
         else:
-            signature = ""
-            signature_tree = SignatureTree._get("")
+            signature = parse_signature("")
 
         self.signature = signature
-        self.signature_tree = signature_tree
         self.name = name
         self.disabled = disabled
         self.introspection = intr.Signal(self.name, args)
@@ -225,13 +228,7 @@ class _Property(property):
                 "the property must specify the dbus type string as a return annotation string"
             )
 
-        self.signature = return_annotation
-        tree = SignatureTree._get(return_annotation)
-
-        if len(tree.types) != 1:
-            raise ValueError("the property signature must be a single complete type")
-
-        self.type = tree.types[0]
+        self.signature = parse_single_type(return_annotation)
 
         if "options" in kwargs:
             options = kwargs["options"]
@@ -439,21 +436,21 @@ class ServiceInterface:
         interface.__buses.remove(bus)
 
     @staticmethod
-    def _msg_body_to_args(msg):
-        if signature_contains_type(msg.signature_tree, msg.body, "h"):
+    def _msg_body_to_args(msg: Message):
+        if signature_contains_type(msg.signature, msg.body, "h"):
             # XXX: This deep copy could be expensive if messages are very
             # large. We could optimize this by only copying what we change
             # here.
-            return replace_idx_with_fds(msg.signature_tree, copy.deepcopy(msg.body), msg.unix_fds)
+            return replace_idx_with_fds(msg.signature, copy.deepcopy(msg.body), msg.unix_fds)
         else:
             return msg.body
 
     @staticmethod
-    def _fn_result_to_body(result, signature_tree):
+    def _fn_result_to_body(result, signature: Signature):
         """The high level interfaces may return single values which may be
         wrapped in a list to be a message body. Also they may return fds
         directly for type 'h' which need to be put into an external list."""
-        out_len = len(signature_tree.types)
+        out_len = len(signature.children)
         if result is None:
             result = []
         else:
@@ -467,14 +464,14 @@ class ServiceInterface:
 
         if out_len != len(result):
             raise SignatureBodyMismatchError(
-                f"Signature and function return mismatch, expected {len(signature_tree.types)} arguments but got {len(result)}"
+                f"Signature and function return mismatch, expected {len(signature.children)} arguments but got {len(result)}"
             )
 
-        return replace_fds_with_idx(signature_tree, result)
+        return replace_fds_with_idx(signature, result)
 
     @staticmethod
-    def _handle_signal(interface, signal, result):
-        body, fds = ServiceInterface._fn_result_to_body(result, signal.signature_tree)
+    def _handle_signal(interface, signal: _Signal, result):
+        body, fds = ServiceInterface._fn_result_to_body(result, signal.signature)
         for bus in ServiceInterface._get_buses(interface):
             bus._interface_signal_notify(
                 interface, interface.name, signal.name, signal.signature, body, fds

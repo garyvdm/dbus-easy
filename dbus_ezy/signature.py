@@ -1,106 +1,161 @@
+import sys
+from dataclasses import InitVar, dataclass
 from functools import lru_cache
-from typing import Any, List, Mapping, Sequence, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
-from .errors import InvalidSignatureError, SignatureBodyMismatchError
 from .validators import is_object_path_valid
 
+__all__ = [
+    "parse_signature",
+    "parse_single_type",
+    "Signature",
+    "Variant",
+    "SignatureBodyMismatchError",
+    "InvalidSignatureError",
+]
 
-class SignatureType:
-    """A class that represents a single complete type within a signature.
 
-    This class is not meant to be constructed directly. Use the :class:`SignatureTree`
-    class to parse signatures.
+class SignatureBodyMismatchError(ValueError):
+    pass
 
-    :ivar ~.signature: The signature of this complete type.
-    :vartype ~.signature: str
+
+class InvalidSignatureError(ValueError):
+    pass
+
+
+@lru_cache(maxsize=None)
+def parse_signature(signature_text: str) -> "Signature":
+    children = []
+    work_signature_text = signature_text
+    while work_signature_text:
+        child, work_signature_text = _parse_next(work_signature_text)
+        children.append(child)
+    return Signature(signature_text, "r", tuple(children))
+
+
+@lru_cache(maxsize=None)
+def parse_single_type(signature_text: str) -> "Signature":
+    signature, signature_text = _parse_next(signature_text)
+    if signature_text:
+        raise InvalidSignatureError(
+            f"more than 1 single complete type, remaining: {signature_text!r}"
+        )
+    return signature
+
+
+def _remove_work_text(text: str, work_text: str):
+    if not work_text:
+        return text
+    return text[: -len(work_text)]
+
+
+def _parse_next(signature_text: str) -> Tuple[Optional["Signature"], str]:
+    if not signature_text:
+        return None, ""
+
+    type_code = signature_text[0]
+
+    if type_code not in TYPE_CODES:
+        raise InvalidSignatureError(f'got unexpected type_code: "{type_code}"')
+
+    # container types
+    if type_code == "a":
+        (child, work_signature_text) = _parse_next(signature_text[1:])
+        if not child:
+            raise InvalidSignatureError("missing type for array")
+        return (
+            Signature(_remove_work_text(signature_text, work_signature_text), "a", (child,)),
+            work_signature_text,
+        )
+
+    if type_code == "(":
+        work_signature_text = signature_text[1:]
+        children = []
+        while True:
+            (child, work_signature_text) = _parse_next(work_signature_text)
+            children.append(child)
+            if not work_signature_text:
+                raise InvalidSignatureError('missing closing ")" for struct')
+            if work_signature_text[0] == ")":
+                work_signature_text = work_signature_text[1:]
+                return (
+                    Signature(
+                        _remove_work_text(signature_text, work_signature_text), "(", tuple(children)
+                    ),
+                    work_signature_text,
+                )
+
+    if type_code == "{":
+        work_signature_text = signature_text[1:]
+        (key_child, work_signature_text) = _parse_next(work_signature_text)
+        if not key_child or len(key_child.children):
+            raise InvalidSignatureError("expected a simple type for dict entry key")
+        (value_child, work_signature_text) = _parse_next(work_signature_text)
+        if not value_child:
+            raise InvalidSignatureError("expected a value for dict entry")
+        if not work_signature_text or work_signature_text[0] != "}":
+            raise InvalidSignatureError('missing closing "}" for dict entry')
+        work_signature_text = work_signature_text[1:]
+        return (
+            Signature(
+                _remove_work_text(signature_text, work_signature_text),
+                "{",
+                (key_child, value_child),
+            ),
+            work_signature_text,
+        )
+
+    # basic type
+    return (Signature(type_code, type_code, ()), signature_text[1:])
+
+
+TYPE_CODES = "ybnqiuxtdsogavh({"
+
+
+@dataclass(frozen=True, **(dict(slots=True) if sys.version_info >= (3, 10) else dict()))
+class Signature:
+    """A class that represents a signature, either a list of single complete types, or
+    a single complete type.
+
+    This class is not meant to be constructed directly. Use `parse_signature` to instantiate.
+
+    :ivar ~.signature_text: The signature of this complete type.
+    :vartype ~.signature_text: str
+
+    :ivar ~.type_code: The type_code of this type.
+    :vartype ~.type_code: str
 
     :ivar children: A list of child types if this is a container type. Arrays \
     have one child type, dict entries have two child types (key and value), and \
     structs have child types equal to the number of struct members.
-    :vartype children: list(:class:`SignatureType`)
+    :vartype children: Sequence(:class:`Signature`)
+
     """
 
-    _tokens = "ybnqiuxtdsogavh({"
+    text: str
+    type_code: str
+    children: Sequence["Signature"] = ()
 
-    def __init__(self, token: str) -> None:
-        self.token = token
-        self.children: List[SignatureType] = []
-        self._signature = None
+    # # Comment this out to get the dataclass __repr__ which shows children
+    # def __repr__(self) -> str:
+    #     return f"<Signature({self.text!r})>"
 
     def __eq__(self, other):
-        if type(other) is SignatureType:
-            return self.signature == other.signature
-        else:
-            return super().__eq__(other)
+        if isinstance(other, Signature):
+            return (
+                self.text == other.text
+                and self.type_code == other.type_code
+                and other.children == other.children
+            )
+        if isinstance(other, str):
+            return self.text == other
+        return NotImplemented
 
-    def _collapse(self):
-        if self.token not in "a({":
-            return self.token
+    def __hash__(self):
+        return self.text.__hash__()
 
-        signature = [self.token]
-
-        for child in self.children:
-            signature.append(child._collapse())
-
-        if self.token == "(":
-            signature.append(")")
-        elif self.token == "{":
-            signature.append("}")
-
-        return "".join(signature)
-
-    @property
-    def signature(self) -> str:
-        if self._signature is not None:
-            return self._signature
-        self._signature = self._collapse()
-        return self._signature
-
-    @staticmethod
-    def _parse_next(signature):
-        if not signature:
-            return (None, "")
-
-        token = signature[0]
-
-        if token not in SignatureType._tokens:
-            raise InvalidSignatureError(f'got unexpected token: "{token}"')
-
-        # container types
-        if token == "a":
-            self = SignatureType("a")
-            (child, signature) = SignatureType._parse_next(signature[1:])
-            if not child:
-                raise InvalidSignatureError("missing type for array")
-            self.children.append(child)
-            return (self, signature)
-        elif token == "(":
-            self = SignatureType("(")
-            signature = signature[1:]
-            while True:
-                (child, signature) = SignatureType._parse_next(signature)
-                if not signature:
-                    raise InvalidSignatureError('missing closing ")" for struct')
-                self.children.append(child)
-                if signature[0] == ")":
-                    return (self, signature[1:])
-        elif token == "{":
-            self = SignatureType("{")
-            signature = signature[1:]
-            (key_child, signature) = SignatureType._parse_next(signature)
-            if not key_child or len(key_child.children):
-                raise InvalidSignatureError("expected a simple type for dict entry key")
-            self.children.append(key_child)
-            (value_child, signature) = SignatureType._parse_next(signature)
-            if not value_child:
-                raise InvalidSignatureError("expected a value for dict entry")
-            if not signature or signature[0] != "}":
-                raise InvalidSignatureError('missing closing "}" for dict entry')
-            self.children.append(value_child)
-            return (self, signature[1:])
-
-        # basic type
-        return (SignatureType(token), signature[1:])
+    def __str__(self) -> str:
+        return self.text
 
     def _verify_byte(self, body):
         BYTE_MIN = 0x00
@@ -217,18 +272,21 @@ class SignatureType:
             )
 
     def _verify_signature(self, body):
-        # I guess we could run it through the SignatureTree parser instead
-        if not isinstance(body, str):
+        if not isinstance(body, (str, Signature)):
             raise SignatureBodyMismatchError(
-                f'DBus SIGNATURE type "g" must be Python type "str", got {type(body)}'
+                f'DBus SIGNATURE type "g" must be Python type "str" or "Signature, got {type(body)}'
             )
-        if len(body.encode()) > 0xFF:
+        if isinstance(body, str):
+            parse_signature(body)
+        if isinstance(body, Signature):
+            body = body.text
+        if len(body.encode("ASCII")) > 0xFF:
             raise SignatureBodyMismatchError('DBus SIGNATURE type "g" must be less than 256 bytes')
 
     def _verify_array(self, body):
         child_type = self.children[0]
 
-        if child_type.token == "{":
+        if child_type.type_code == "{":
             if not isinstance(body, Mapping):
                 raise SignatureBodyMismatchError(
                     'DBus ARRAY type "a" with DICT_ENTRY child must be Python '
@@ -237,7 +295,7 @@ class SignatureType:
             for key, value in body.items():
                 child_type.children[0].verify(key)
                 child_type.children[1].verify(value)
-        elif child_type.token == "y":
+        elif child_type.type_code == "y":
             if not isinstance(body, (bytearray, bytes)):
                 raise SignatureBodyMismatchError(
                     f'DBus ARRAY type "a" with BYTE child must be Python type "bytes", got {type(body)}'
@@ -281,11 +339,11 @@ class SignatureType:
         """
         if body is None:
             raise SignatureBodyMismatchError('Cannot serialize Python type "None"')
-        validator = self.validators.get(self.token)
+        validator = self.validators.get(self.type_code)
         if validator:
             validator(self, body)
         else:
-            raise Exception(f"cannot verify type with token {self.token}")
+            raise Exception(f"cannot verify type with token {self.type_code}")
 
         return True
 
@@ -305,74 +363,12 @@ class SignatureType:
         "g": _verify_signature,
         "a": _verify_array,
         "(": _verify_struct,
+        "r": _verify_struct,
         "v": _verify_variant,
     }
 
 
-class SignatureTree:
-    """A class that represents a signature as a tree structure for conveniently
-    working with DBus signatures.
-
-    This class will not normally be used directly by the user.
-
-    :ivar types: A list of parsed complete types.
-    :vartype types: list(:class:`SignatureType`)
-
-    :ivar ~.signature: The signature of this signature tree.
-    :vartype ~.signature: str
-
-    :raises:
-        :class:`InvalidSignatureError` if the given signature is not valid.
-    """
-
-    @staticmethod
-    @lru_cache(maxsize=None)
-    def _get(signature: str = "") -> "SignatureTree":
-        return SignatureTree(signature)
-
-    def __init__(self, signature: str = ""):
-        self.signature = signature
-
-        self.types: List[SignatureType] = []
-
-        if len(signature) > 0xFF:
-            raise InvalidSignatureError("A signature must be less than 256 characters")
-
-        while signature:
-            (type_, signature) = SignatureType._parse_next(signature)
-            self.types.append(type_)
-
-    def __eq__(self, other):
-        if type(other) is SignatureTree:
-            return self.signature == other.signature
-        else:
-            return super().__eq__(other)
-
-    def verify(self, body: List[Any]):
-        """Verifies that the give body matches this signature tree
-
-        :param body: the body to verify for this tree
-        :type body: list(Any)
-
-        :returns: True if the signature matches the body or an exception if not.
-
-        :raises:
-            :class:`SignatureBodyMismatchError` if the signature does not match the body.
-        """
-        if not isinstance(body, Sequence):
-            raise SignatureBodyMismatchError(
-                f'The body must be a "Sequence", e.g. "list" (got {type(body)})'
-            )
-        if len(body) != len(self.types):
-            raise SignatureBodyMismatchError(
-                f"The body has the wrong number of types (got {len(body)}, expected {len(self.types)})"
-            )
-        for i, type_ in enumerate(self.types):
-            type_.verify(body[i])
-
-        return True
-
-
+@dataclass
 class Variant:
     """A class to represent a DBus variant (type "v").
 
@@ -381,10 +377,7 @@ class Variant:
     construct this class directly for use in message bodies sent over the bus.
 
     :ivar signature: The signature for this variant. Must be a single complete type.
-    :vartype signature: str
-
-    :ivar signature_type: The parsed signature of this variant.
-    :vartype signature_type: :class:`SignatureType`
+    :vartype signature: Signature
 
     :ivar value: The value of this variant. Must correspond to the signature.
     :vartype value: Any
@@ -394,41 +387,54 @@ class Variant:
         :class:`SignatureBodyMismatchError` if the signature does not match the body.
     """
 
-    def __init__(
-        self, signature: Union[str, SignatureTree, SignatureType], value: Any, verify: bool = True
-    ):
-        signature_str = ""
-        signature_tree = None
-        signature_type = None
+    signature: Signature
+    value: Any
+    verify: InitVar[bool] = True
 
-        if type(signature) is SignatureTree:
-            signature_tree = signature
-        elif type(signature) is SignatureType:
-            signature_type = signature
-            signature_str = signature.signature
-        elif type(signature) is str:
-            signature_tree = SignatureTree._get(signature)
-        else:
-            raise TypeError("signature must be a SignatureTree, SignatureType, or a string")
-
-        if signature_tree:
-            if verify and len(signature_tree.types) != 1:
-                raise ValueError("variants must have a signature for a single complete type")
-            signature_str = signature_tree.signature
-            signature_type = signature_tree.types[0]
+    def __post_init__(self, verify: bool = True):
+        if isinstance(self.signature, str):
+            self.signature = parse_single_type(self.signature)
+        if not isinstance(self.signature, Signature):
+            raise TypeError("signature must be a Signature or a string")
 
         if verify:
-            signature_type.verify(value)
+            self.signature.verify(self.value)
 
-        self.type = signature_type
-        self.signature = signature_str
-        self.value = value
 
-    def __eq__(self, other):
-        if type(other) is Variant:
-            return self.signature == other.signature and self.value == other.value
-        else:
-            return super().__eq__(other)
+def signature_contains_type(
+    signature: Union[str, Signature],
+    body: Sequence[Any],
+    type_code: str,
+) -> bool:
+    """For a given signature and body, check to see if it contains any members
+    with the given type_code"""
+    if isinstance(signature, str):
+        signature = parse_signature(signature)
 
-    def __repr__(self):
-        return "<dbus_ezy.signature.Variant ('%s', %s)>" % (self.type.signature, self.value)
+    queue: List[Signature] = [signature]
+    contains_variants = False
+
+    while queue:
+        decedent = queue.pop()
+        if decedent.type_code == type_code:
+            return True
+        elif decedent.type_code == "v":
+            contains_variants = True
+        queue.extend(decedent.children)
+
+    if not contains_variants:
+        return False
+
+    body_queue = list(body)
+
+    while body_queue:
+        member = body_queue.pop()
+        if isinstance(member, Variant):
+            if signature_contains_type(member.signature, (member.value,), type_code):
+                return True
+        elif isinstance(member, list):
+            body_queue.extend(member)
+        elif isinstance(member, dict):
+            body_queue.extend(member.values())
+
+    return False

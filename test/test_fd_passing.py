@@ -8,7 +8,7 @@ import pytest
 from dbus_ezy import Message, MessageType
 from dbus_ezy.aio import MessageBus
 from dbus_ezy.service import ServiceInterface, dbus_property, method, signal
-from dbus_ezy.signature import SignatureTree, Variant
+from dbus_ezy.signature import Variant, parse_signature
 
 
 def open_file():
@@ -357,5 +357,6 @@ async def test_sending_file_descriptor_with_proxy():
     ],
 )
 async def test_fn_result_to_body(result, out_signature, expected):
-    out_signature_tree = SignatureTree(out_signature)
-    assert ServiceInterface._fn_result_to_body(result, out_signature_tree) == expected
+    signature = parse_signature(out_signature)
+    # TODO investigate if this can test replace_fds_with_idx directly?
+    assert ServiceInterface._fn_result_to_body(result, signature) == expected

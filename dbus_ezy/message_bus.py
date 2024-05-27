@@ -23,7 +23,7 @@ from .errors import DBusError, InvalidAddressError
 from .message import Message
 from .proxy_object import BaseProxyObject
 from .service import ServiceInterface
-from .signature import Variant
+from .signature import Signature, Variant
 from .validators import assert_bus_name_valid, assert_object_path_valid
 
 
@@ -693,7 +693,7 @@ class BaseMessageBus:
             raise TypeError(text)
 
     @staticmethod
-    def _check_method_return(msg, err, signature):
+    def _check_method_return(msg: Message, err, signature: Union[Signature, str]):
         if err:
             raise err
         elif msg.message_type == MessageType.METHOD_RETURN and msg.signature == signature:
@@ -750,7 +750,7 @@ class BaseMessageBus:
 
         return SendReply()
 
-    def _process_message(self, msg):
+    def _process_message(self, msg: Message):
         current_message.set_value(msg)
         handled = False
 
@@ -832,13 +832,13 @@ class BaseMessageBus:
             args = ServiceInterface._msg_body_to_args(msg)
             result = method.fn(interface, *args)
             body, fds = ServiceInterface._fn_result_to_body(
-                result, signature_tree=method.out_signature_tree
+                result, signature=method.out_signature_tree
             )
             send_reply(Message.new_method_return(msg, method.out_signature, body, fds))
 
         return handler
 
-    def _find_message_handler(self, msg):
+    def _find_message_handler(self, msg: Message):
         handler = None
 
         if msg._matches(
@@ -959,9 +959,9 @@ class BaseMessageBus:
                     interface, get_all_properties_callback, node
                 )
 
-    def _default_properties_handler(self, msg, send_reply):
+    def _default_properties_handler(self, msg: Message, send_reply):
         methods = {"Get": "ss", "Set": "ssv", "GetAll": "s"}
-        if msg.member not in methods or methods[msg.member] != msg.signature:
+        if msg.member not in methods or methods[msg.member] != msg.signature.text:
             raise DBusError(
                 ErrorType.UNKNOWN_METHOD,
                 f'properties interface doesn\'t have method "{msg.member}" with signature "{msg.signature}"',
@@ -1027,11 +1027,11 @@ class BaseMessageBus:
                             send_reply.send_error(err)
                             return
 
-                        body, unix_fds = replace_fds_with_idx(prop.signature, [prop_value])
+                        body, unix_fds = replace_fds_with_idx(prop.signature, prop_value)
 
                         send_reply(
                             Message.new_method_return(
-                                msg, "v", [Variant(prop.signature, body[0])], unix_fds=unix_fds
+                                msg, "v", [Variant(prop.signature, body)], unix_fds=unix_fds
                             )
                         )
                     except Exception as e:
@@ -1056,10 +1056,8 @@ class BaseMessageBus:
                         return
                     send_reply(Message.new_method_return(msg))
 
-                body = replace_idx_with_fds(value.signature, [value.value], msg.unix_fds)
-                ServiceInterface._set_property_value(
-                    interface, prop, body[0], set_property_callback
-                )
+                body = replace_idx_with_fds(value.signature, value.value, msg.unix_fds)
+                ServiceInterface._set_property_value(interface, prop, body, set_property_callback)
 
         elif msg.member == "GetAll":
 

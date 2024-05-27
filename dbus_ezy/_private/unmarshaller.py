@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from ..constants import MessageFlag, MessageType
 from ..errors import InvalidMessageError
 from ..message import Message
-from ..signature import SignatureTree, SignatureType, Variant
+from ..signature import Signature, Variant, parse_signature, parse_single_type
 from .constants import (
     BIG_ENDIAN,
     LITTLE_ENDIAN,
@@ -38,7 +38,7 @@ DBUS_TO_CTYPE = {
 HEADER_SIGNATURE_SIZE = 16
 HEADER_ARRAY_OF_STRUCT_SIGNATURE_POSITION = 12
 
-UINT32_SIGNATURE = SignatureTree._get("u").types[0]
+UINT32_SIGNATURE = parse_single_type("u")
 
 HEADER_DESTINATION = HeaderField.DESTINATION.name
 HEADER_PATH = HeaderField.PATH.name
@@ -51,7 +51,7 @@ HEADER_SENDER = HeaderField.SENDER.name
 READER_TYPE = Dict[
     str,
     Tuple[
-        Optional[Callable[["Unmarshaller", SignatureType], Any]],
+        Optional[Callable[["Unmarshaller", Signature], Any]],
         Optional[str],
         Optional[int],
         Optional[Struct],
@@ -175,34 +175,34 @@ class Unmarshaller:
         return self.buf[o : o + signature_len].decode()
 
     def read_variant(self, _=None):
-        tree = SignatureTree._get(self.read_signature())
+        signature = parse_single_type(self.read_signature())
         # verify in Variant is only useful on construction not unmarshalling
-        return Variant(tree, self.read_argument(tree.types[0]), verify=False)
+        return Variant(signature, self.read_argument(signature), verify=False)
 
-    def read_struct(self, type_: SignatureType):
+    def read_struct(self, signature: Signature):
         self.offset += -self.offset & 7  # align 8
-        return [self.read_argument(child_type) for child_type in type_.children]
+        return [self.read_argument(child_type) for child_type in signature.children]
 
-    def read_dict_entry(self, type_: SignatureType):
+    def read_dict_entry(self, signature: Signature):
         self.offset += -self.offset & 7  # align 8
-        return self.read_argument(type_.children[0]), self.read_argument(type_.children[1])
+        return self.read_argument(signature.children[0]), self.read_argument(signature.children[1])
 
-    def read_array(self, type_: SignatureType):
+    def read_array(self, signature: Signature):
         self.offset += -self.offset & 3  # align 4 for the array
         array_length = self.read_argument(UINT32_SIGNATURE)
 
-        child_type = type_.children[0]
-        if child_type.token in "xtd{(":
+        child_type = signature.children[0]
+        if child_type.type_code in "xtd{(":
             # the first alignment is not included in the array size
             self.offset += -self.offset & 7  # align 8
 
-        if child_type.token == "y":
+        if child_type.type_code == "y":
             self.offset += array_length
             return self.buf[self.offset - array_length : self.offset]
 
         beginning_offset = self.offset
 
-        if child_type.token == "{":
+        if child_type.type_code == "{":
             result_dict = {}
             while self.offset - beginning_offset < array_length:
                 key, value = self.read_dict_entry(child_type)
@@ -214,12 +214,12 @@ class Unmarshaller:
             result_list.append(self.read_argument(child_type))
         return result_list
 
-    def read_argument(self, type_: SignatureType) -> Any:
+    def read_argument(self, signature: Signature) -> Any:
         """Dispatch to an argument reader or cast/unpack a C type."""
-        token = type_.token
-        reader, ctype, size, struct = self.readers[token]
+        type_code = signature.type_code
+        reader, ctype, size, struct = self.readers[type_code]
         if reader:  # complex type
-            return reader(self, type_)
+            return reader(self, signature)
         self.offset += size + (-self.offset & (size - 1))  # align
         if self.can_cast:
             return self.view[self.offset - size : self.offset].cast(ctype)[0]
@@ -238,8 +238,8 @@ class Unmarshaller:
             signature_len = self.view[self.offset]  # byte
             o = self.offset + 1
             self.offset += signature_len + 2  # one for the byte, one for the '\0'
-            tree = SignatureTree._get(self.buf[o : o + signature_len].decode())
-            headers[HeaderField(field_0).name] = self.read_argument(tree.types[0])
+            signature = parse_single_type(self.buf[o : o + signature_len].decode())
+            headers[HeaderField(field_0).name] = self.read_argument(signature)
         return headers
 
     def _read_header(self):
@@ -275,7 +275,7 @@ class Unmarshaller:
         self.offset = HEADER_ARRAY_OF_STRUCT_SIGNATURE_POSITION
         header_fields = self.header_fields(self.header_len)
         self.offset += -self.offset & 7  # align 8
-        tree = SignatureTree._get(header_fields.get(HeaderField.SIGNATURE.name, ""))
+        signature = parse_signature(header_fields.get(HeaderField.SIGNATURE.name, ""))
         self.message = Message(
             destination=header_fields.get(HEADER_DESTINATION),
             path=header_fields.get(HEADER_PATH),
@@ -287,8 +287,8 @@ class Unmarshaller:
             reply_serial=header_fields.get(HEADER_REPLY_SERIAL),
             sender=header_fields.get(HEADER_SENDER),
             unix_fds=self.unix_fds,
-            signature=tree.signature,
-            body=[self.read_argument(t) for t in tree.types] if self.body_len else [],
+            signature=signature,
+            body=[self.read_argument(t) for t in signature.children] if self.body_len else [],
             serial=self.serial,
         )
 
@@ -308,7 +308,7 @@ class Unmarshaller:
         return self.message
 
     _complex_parsers: Dict[
-        str, Tuple[Callable[["Unmarshaller", SignatureType], Any], None, None, None]
+        str, Tuple[Callable[["Unmarshaller", Signature], Any], None, None, None]
     ] = {
         "b": (read_boolean, None, None, None),
         "o": (read_string, None, None, None),

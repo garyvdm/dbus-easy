@@ -5,7 +5,7 @@ from ._private.constants import LITTLE_ENDIAN, PROTOCOL_VERSION, HeaderField
 from ._private.marshaller import Marshaller
 from .constants import ErrorType, MessageFlag, MessageType
 from .errors import InvalidMessageError
-from .signature import SignatureTree, Variant
+from .signature import Signature, Variant, parse_signature
 from .validators import (
     assert_bus_name_valid,
     assert_interface_name_valid,
@@ -54,7 +54,7 @@ class Message:
     :ivar signature: The signature of the body of this message.
     :vartype signature: str
     :ivar signature_tree: The signature parsed as a signature tree.
-    :vartype signature_tree: :class:`SignatureTree`
+    :vartype signature_tree: :class:`Signature`
     :ivar body: The body of this message. Must match the signature.
     :vartype body: list(Any)
     :ivar serial: The serial of the message. Will be automatically set during message sending if not present. Use the ``new_serial()`` method of the bus to generate a serial.
@@ -79,9 +79,7 @@ class Message:
     reply_serial: int = None
     sender: str = None
     unix_fds: List[int] = dataclasses.field(default_factory=list)
-    # TODO initializer should specify which of the below they are passing in.
-    signature: str = ""
-    signature_tree: SignatureTree = dataclasses.field(init=False)
+    signature: Signature = parse_signature("")
 
     body: List[Any] = dataclasses.field(default_factory=list)
     serial: int = 0
@@ -93,12 +91,8 @@ class Message:
         self.error_name = (
             self.error_name if type(self.error_name) is not ErrorType else self.error_name.value
         )
-        self.signature = self.signature if type(self.signature) is SignatureTree else self.signature
-        self.signature_tree = (
-            self.signature
-            if type(self.signature) is SignatureTree
-            else SignatureTree._get(self.signature)
-        )
+        if isinstance(self.signature, str):
+            self.signature = parse_signature(self.signature)
 
         if self.destination is not None:
             assert_bus_name_valid(self.destination)
@@ -243,7 +237,7 @@ class Message:
             fields.append([HeaderField.REPLY_SERIAL.value, Variant("u", self.reply_serial)])
         if self.destination:
             fields.append([HeaderField.DESTINATION.value, Variant("s", self.destination)])
-        if self.signature:
+        if self.signature.children:
             fields.append([HeaderField.SIGNATURE.value, Variant("g", self.signature)])
         if self.unix_fds and negotiate_unix_fd:
             fields.append([HeaderField.UNIX_FDS.value, Variant("u", len(self.unix_fds))])

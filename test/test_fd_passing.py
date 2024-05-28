@@ -1,7 +1,8 @@
 """This tests the ability to send and receive file descriptors in dbus messages"""
 
 import os
-from asyncio import get_event_loop
+from asyncio import Future, get_event_loop
+from contextlib import AsyncExitStack, contextmanager
 
 import pytest
 
@@ -70,50 +71,48 @@ def assert_fds_equal(fd1, fd2):
     assert stat1.st_rdev == stat2.st_rdev
 
 
+@contextmanager
+def fd_closer(fd):
+    try:
+        yield fd
+    finally:
+        os.close(fd)
+
+
 @pytest.mark.asyncio
 async def test_sending_file_descriptor_low_level():
-    bus1 = await MessageBus(negotiate_unix_fd=True).connect()
-    bus2 = await MessageBus(negotiate_unix_fd=True).connect()
+    async with AsyncExitStack() as stack:
+        sender_bus = await stack.enter_async_context(MessageBus(negotiate_unix_fd=True))
+        reviver_bus = await stack.enter_async_context(MessageBus(negotiate_unix_fd=True))
 
-    fd_before = open_file()
-    fd_after = None
+        sender_fd = stack.enter_context(fd_closer(open_file()))
+        sender_msg = Message(
+            destination=sender_bus.unique_name,
+            path="/org/test/path",
+            interface="org.test.iface",
+            member="SomeMember",
+            body=[0],
+            signature="h",
+            unix_fds=[sender_fd],
+        )
 
-    msg = Message(
-        destination=bus1.unique_name,
-        path="/org/test/path",
-        interface="org.test.iface",
-        member="SomeMember",
-        body=[0],
-        signature="h",
-        unix_fds=[fd_before],
-    )
+        receiver_msg_fut = Future()
 
-    def message_handler(sent):
-        nonlocal fd_after
-        if sent.sender == bus2.unique_name and sent.serial == msg.serial:
-            assert sent.path == msg.path
-            assert sent.serial == msg.serial
-            assert sent.interface == msg.interface
-            assert sent.member == msg.member
-            assert sent.body == [0]
-            assert len(sent.unix_fds) == 1
-            fd_after = sent.unix_fds[0]
-            bus1.send(Message.new_method_return(sent, "s", ["got it"]))
-            bus1.remove_message_handler(message_handler)
-            return True
+        def message_handler(msg):
+            nonlocal receiver_msg_fut
+            if msg.sender == reviver_bus.unique_name and msg.serial == sender_msg.serial:
+                receiver_msg_fut.set_result(msg)
+                return True
 
-    bus1.add_message_handler(message_handler)
+        sender_bus.add_message_handler(message_handler)
 
-    reply = await bus2.call(msg)
-    assert reply.body == ["got it"]
-    assert fd_after is not None
+        await reviver_bus.send(sender_msg)
+        receiver_msg = await receiver_msg_fut
 
-    assert_fds_equal(fd_before, fd_after)
+        assert len(receiver_msg.unix_fds) == 1
+        receiver_fd = stack.enter_context(fd_closer(receiver_msg.unix_fds[0]))
 
-    for fd in [fd_before, fd_after]:
-        os.close(fd)
-    for bus in [bus1, bus2]:
-        bus.disconnect()
+        assert_fds_equal(sender_fd, receiver_fd)
 
 
 @pytest.mark.asyncio

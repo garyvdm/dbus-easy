@@ -45,7 +45,7 @@ class _MessageSource(_GLibSource):
         try:
             while self.bus._stream.readable():
                 if not self.unmarshaller:
-                    self.unmarshaller = Unmarshaller(self.bus._stream)
+                    self.unmarshaller = Unmarshaller(self.bus._sock)
 
                 if self.unmarshaller.unmarshall():
                     callback(self.unmarshaller.message)

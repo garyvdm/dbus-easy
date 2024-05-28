@@ -3,6 +3,7 @@ import json
 import os
 from dataclasses import dataclass
 from pprint import pprint
+from socket import socketpair
 
 import pytest
 
@@ -114,7 +115,7 @@ def test_unmarshall(item: MessageExample):
 
 def test_unmarshall_can_resume():
     """Verify resume works."""
-    bluez_rssi_message = (
+    bluez_rssi_message = bytes.fromhex(
         "6c04010134000000e25389019500000001016f00250000002f6f72672f626c75657a2f686369302f6465"
         "765f30385f33415f46325f31455f32425f3631000000020173001f0000006f72672e667265656465736b"
         "746f702e444275732e50726f7065727469657300030173001100000050726f706572746965734368616e"
@@ -122,27 +123,19 @@ def test_unmarshall_can_resume():
         "110000006f72672e626c75657a2e446576696365310000000e0000000000000004000000525353490001"
         "6e00a7ff000000000000"
     )
-    message_bytes = bytes.fromhex(bluez_rssi_message)
+    chunks = [bluez_rssi_message[i : i + 4] for i in range(0, len(bluez_rssi_message), 4)]
 
-    class SlowStream(io.IOBase):
-        """A fake stream that will only give us one byte at a time."""
+    send_sock, recv_sock = socketpair()
+    recv_sock.settimeout(0)
+    unmarshaller = Unmarshaller(recv_sock)
+    for chunk in chunks[:-1]:
+        send_sock.send(chunk)
+        message = unmarshaller.unmarshall()
+        assert message is None
 
-        def __init__(self):
-            self.data = message_bytes
-            self.pos = 0
-
-        def read(self, n) -> bytes:
-            data = self.data[self.pos : self.pos + 1]
-            self.pos += 1
-            return data
-
-    stream = SlowStream()
-    unmarshaller = Unmarshaller(stream)
-
-    for _ in range(len(bluez_rssi_message)):
-        if unmarshaller.unmarshall():
-            break
-    assert unmarshaller.message is not None
+    send_sock.send(chunks[-1])
+    message = unmarshaller.unmarshall()
+    assert message is not None
 
 
 def test_ay_buffer():

@@ -428,10 +428,7 @@ class MessageBus(BaseMessageBus):
                 break
 
     def _create_unmarshaller(self):
-        sock = None
-        if self._negotiate_unix_fd:
-            sock = self._sock
-        return Unmarshaller(self._stream, sock)
+        return Unmarshaller(self._sock)
 
     def _finalize(self, err=None):
         try:

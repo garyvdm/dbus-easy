@@ -1,9 +1,8 @@
-from test.util import check_gi_repository, skip_reason_no_gi
-
 import pytest
 
 from dbus_ezy import Message, MessageFlag, MessageType
 from dbus_ezy.glib import MessageBus
+from test.util import check_gi_repository, skip_reason_no_gi
 
 has_gi = check_gi_repository()
 

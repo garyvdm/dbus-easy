@@ -1,9 +1,9 @@
 from contextlib import AsyncExitStack
-from test.util import check_gi_repository, skip_reason_no_gi
 
 import pytest
 
 from dbus_ezy import Message, MessageType, NameFlag, ReleaseNameReply, RequestNameReply, aio, glib
+from test.util import check_gi_repository, skip_reason_no_gi
 
 has_gi = check_gi_repository()
 
